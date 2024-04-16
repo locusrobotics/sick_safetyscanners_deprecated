@@ -72,6 +72,10 @@ SickSafetyscannersRos::SickSafetyscannersRos()
   m_status_overview_server =
     m_nh.advertiseService("status_overview", &SickSafetyscannersRos::getStatusOverview, this);
 
+  m_scan_watchdog_timer = m_nh.createTimer(m_scan_timeout, &SickSafetyscannersRos::scanWatchdogTimerCallback, this);
+  m_configure_timer =
+		  m_nh.createTimer(m_reconfiguration_timeout, &SickSafetyscannersRos::configureTimerCallback, this, true, false);
+
   // Diagnostics for frequency
   m_diagnostic_updater.setHardwareID(m_communication_settings.getSensorIp().to_string());
 
@@ -83,24 +87,13 @@ SickSafetyscannersRos::SickSafetyscannersRos()
     m_laser_scan_publisher, m_diagnostic_updater, frequency_param, timestamp_param));
   m_diagnostic_updater.add("State", this, &SickSafetyscannersRos::sensorDiagnostics);
 
-  m_device = std::make_shared<sick::SickSafetyscanners>(
-    boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
-    &m_communication_settings,
-    m_interface_ip);
-  m_device->run();
-  readTypeCodeSettings();
-
-  if (m_use_pers_conf)
+  // Configure the lidar. On failure, start a timer to try again later.
+  // TODO(carlos-m159): right now configure will always return true, even
+  // if socket creation fails. 
+  if (!configure())
   {
-    readPersistentConfig();
+    m_configure_timer.start();
   }
-
-  m_device->changeSensorSettings(m_communication_settings);
-  m_device->requestConfigMetadata(m_communication_settings, config_meta_data);
-  m_device->requestFirmwareVersion(m_communication_settings, firmware_version);
-
-  m_initialised = true;
-  ROS_INFO("Successfully launched node.");
 }
 
 void SickSafetyscannersRos::readTypeCodeSettings()
@@ -261,6 +254,18 @@ bool SickSafetyscannersRos::readParameters()
 
   m_private_nh.getParam("min_intensities", m_min_intensities);
 
+  double scan_timeout = m_scan_timeout.toSec();
+  if (m_private_nh.param("scan_timeout", scan_timeout, scan_timeout))
+  {
+    m_scan_timeout = ros::Duration(scan_timeout);
+  }
+
+  double reconfiguration_timeout = m_reconfiguration_timeout.toSec();
+  if (m_private_nh.param("reconfiguration_timeout", reconfiguration_timeout, reconfiguration_timeout))
+  {
+    m_reconfiguration_timeout = ros::Duration(reconfiguration_timeout);
+  }
+
   return true;
 }
 
@@ -269,7 +274,11 @@ void SickSafetyscannersRos::receivedUDPPacket(const sick::datastructure::Data& d
   if (!data.getMeasurementDataPtr()->isEmpty() && !data.getDerivedValuesPtr()->isEmpty())
   {
     sensor_msgs::LaserScan scan = createLaserScanMessage(data);
-
+    {
+      // Update last received scan
+      std::lock_guard<std::mutex> lock(m_watchdog_mutex);
+      m_scan_stamp = scan.header.stamp;
+    }
     m_diagnosed_laser_scan_publisher->publish(scan);
   }
 
@@ -934,5 +943,71 @@ std::string SickSafetyscannersRos::getDateString(uint32_t days_since_1972, uint3
   return retval;
 }
 
+void SickSafetyscannersRos::scanWatchdogTimerCallback(const ros::TimerEvent& event)
+{
+  // If the timeout has expired, try to reconnect to the lidar
+  std::lock_guard<std::mutex> lock(m_watchdog_mutex);
+  auto elapsed_time = event.current_real - std::max(m_configured_stamp, m_scan_stamp);
+  if (m_initialised && elapsed_time > m_scan_timeout)
+  {
+    ROS_WARN_STREAM(
+      "No scan sector messages have been received in the last " << std::setprecision(3) << elapsed_time.toSec()
+                                                                << " seconds (since " << m_scan_stamp
+                                                                << "). Resetting the lidar.");
+    ROS_WARN_STREAM("Scan sector watchdog found an issue. Trying to reconnect to lidar.");
+    triggerReconfigure();
+  }
+}
+
+void SickSafetyscannersRos::configureTimerCallback(const ros::TimerEvent& event)
+{
+  // Stop the timer so that it may be restarted later
+  m_configure_timer.stop();
+
+  // Try to configure the lidar again
+  if (!m_initialised && !configure())
+  {
+    // Configuration failed. Restart the timer to try again.
+    m_configure_timer.start();
+  }
+}
+
+bool SickSafetyscannersRos::configure()
+{
+  m_device = std::make_shared<sick::SickSafetyscanners>(
+    boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
+    &m_communication_settings,
+    m_interface_ip);
+  m_device->run();
+  readTypeCodeSettings();
+
+  if (m_use_pers_conf)
+  {
+    readPersistentConfig();
+  }
+
+  m_device->changeSensorSettings(m_communication_settings);
+  m_device->requestConfigMetadata(m_communication_settings, config_meta_data);
+  m_device->requestFirmwareVersion(m_communication_settings, firmware_version);
+
+  m_initialised = true;
+  {
+    std::lock_guard<std::mutex> lock(m_watchdog_mutex);
+    m_configured_stamp = ros::Time::now();
+  }
+  ROS_INFO("Successfully launched node.");
+  return true;
+}
+
+
+void SickSafetyscannersRos::triggerReconfigure()
+{
+  // "disconnect"
+  m_device.reset();
+  // clean initialized state
+  m_initialised = false;
+  // Start reconfigure timer
+  m_configure_timer.start();
+}
 
 } // namespace sick
