@@ -89,7 +89,7 @@ SickSafetyscannersRos::SickSafetyscannersRos()
 
   // Configure the lidar. On failure, start a timer to try again later.
   // TODO(carlos-m159): right now configure will always return true, even
-  // if socket creation fails. 
+  // if socket creation fails.
   if (!configure())
   {
     m_configure_timer.start();
@@ -974,31 +974,40 @@ void SickSafetyscannersRos::configureTimerCallback(const ros::TimerEvent& event)
 
 bool SickSafetyscannersRos::configure()
 {
-  m_device = std::make_shared<sick::SickSafetyscanners>(
-    boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
-    &m_communication_settings,
-    m_interface_ip);
-  m_device->run();
-  readTypeCodeSettings();
-
-  if (m_use_pers_conf)
+  try
   {
-    readPersistentConfig();
+    m_device = std::make_shared<sick::SickSafetyscanners>(
+      boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
+      &m_communication_settings,
+      m_interface_ip);
+    m_device->run();
+    readTypeCodeSettings();
+
+    if (m_use_pers_conf)
+    {
+      readPersistentConfig();
+    }
+
+    m_device->changeSensorSettings(m_communication_settings);
+    m_device->requestConfigMetadata(m_communication_settings, config_meta_data);
+    m_device->requestFirmwareVersion(m_communication_settings, firmware_version);
+
+    m_initialised = true;
+    {
+      std::lock_guard<std::mutex> lock(m_watchdog_mutex);
+      m_configured_stamp = ros::Time::now();
+    }
+    ROS_INFO("Successfully launched node.");
+  }
+  catch (const std::exception& e)
+  {
+    ROS_ERROR_STREAM("Error while configuring the lidar: " << e.what());
+    m_device.reset();
+    m_initialised = false;
   }
 
-  m_device->changeSensorSettings(m_communication_settings);
-  m_device->requestConfigMetadata(m_communication_settings, config_meta_data);
-  m_device->requestFirmwareVersion(m_communication_settings, firmware_version);
-
-  m_initialised = true;
-  {
-    std::lock_guard<std::mutex> lock(m_watchdog_mutex);
-    m_configured_stamp = ros::Time::now();
-  }
-  ROS_INFO("Successfully launched node.");
-  return true;
+  return m_initialised;
 }
-
 
 void SickSafetyscannersRos::triggerReconfigure()
 {

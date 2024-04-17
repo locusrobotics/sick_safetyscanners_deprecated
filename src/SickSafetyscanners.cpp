@@ -245,7 +245,13 @@ void SickSafetyscanners::startTCPConnection(const sick::datastructure::CommSetti
       boost::ref(*m_io_service_ptr),
       settings.getSensorIp(),
       settings.getSensorTcpPort());
-  async_tcp_client->doConnect();
+
+  if (!async_tcp_client->doConnect())
+  {
+    std::stringstream ss;
+    ss << "Could not connect to " << settings.getSensorIp() << " : " << settings.getSensorTcpPort() << "\n";
+    throw std::runtime_error(ss.str());
+  }
 
   m_session_ptr.reset();
   m_session_ptr = std::make_shared<sick::cola2::Cola2Session>(async_tcp_client);
