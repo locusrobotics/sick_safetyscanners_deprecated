@@ -44,6 +44,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include <sick_safetyscanners/communication/AsyncTCPClient.h>
 #include <sick_safetyscanners/communication/AsyncUDPClient.h>
@@ -97,7 +98,8 @@ public:
    */
   SickSafetyscanners(const packetReceivedCallbackFunction& newPacketReceivedCallbackFunction,
                      sick::datastructure::CommSettings* settings,
-                     boost::asio::ip::address_v4 interface_ip);
+                     boost::asio::ip::address_v4 interface_ip,
+                     const std::chrono::duration<double> tcp_connect_timeout);
 
   /*!
    * \brief Destructor
@@ -207,6 +209,8 @@ private:
   std::shared_ptr<sick::cola2::Cola2Session> m_session_ptr;
 
   std::shared_ptr<sick::data_processing::UDPPacketMerger> m_packet_merger_ptr;
+
+  std::chrono::duration<double> m_tcp_connect_timeout;
 
   void processUDPPacket(const sick::datastructure::PacketBuffer& buffer);
   bool udpClientThread();

@@ -85,13 +85,13 @@ void AsyncTCPClient::doDisconnect()
   }
 }
 
-bool AsyncTCPClient::doConnect(const std::chrono::seconds& wait_for_connect)
+bool AsyncTCPClient::doConnect(const std::chrono::duration<double> wait_for_connect)
 {
   boost::mutex::scoped_lock lock(m_socket_mutex);
   auto connect_future = m_socket_ptr->async_connect(m_remote_endpoint, boost::asio::use_future);
   if (wait_for_connect >= std::chrono::seconds(0))
   {
-    if (std::future_status::ready != connect_future.wait_for(std::chrono::seconds(wait_for_connect)))
+    if (std::future_status::ready != connect_future.wait_for(wait_for_connect))
     {
       ROS_ERROR_STREAM("Connect Timed out...");
       return false;

@@ -88,8 +88,6 @@ SickSafetyscannersRos::SickSafetyscannersRos()
   m_diagnostic_updater.add("State", this, &SickSafetyscannersRos::sensorDiagnostics);
 
   // Configure the lidar. On failure, start a timer to try again later.
-  // TODO(carlos-m159): right now configure will always return true, even
-  // if socket creation fails.
   if (!configure())
   {
     m_configure_timer.start();
@@ -265,6 +263,8 @@ bool SickSafetyscannersRos::readParameters()
   {
     m_reconfiguration_timeout = ros::Duration(reconfiguration_timeout);
   }
+
+  m_private_nh.param("tcp_connect_timeout", m_tcp_connect_timeout, m_tcp_connect_timeout);
 
   return true;
 }
@@ -946,13 +946,19 @@ std::string SickSafetyscannersRos::getDateString(uint32_t days_since_1972, uint3
 void SickSafetyscannersRos::scanWatchdogTimerCallback(const ros::TimerEvent& event)
 {
   // If the timeout has expired, try to reconnect to the lidar
-  std::lock_guard<std::mutex> lock(m_watchdog_mutex);
-  auto elapsed_time = event.current_real - std::max(m_configured_stamp, m_scan_stamp);
+  ros::Time configured_stamp;
+  ros::Time scan_stamp;
+  {
+    std::lock_guard<std::mutex> lock(m_watchdog_mutex);
+    configured_stamp = m_configured_stamp;
+    scan_stamp = m_scan_stamp;
+  }
+  auto elapsed_time = event.current_real - std::max(configured_stamp, scan_stamp);
   if (m_initialised && elapsed_time > m_scan_timeout)
   {
     ROS_WARN_STREAM(
       "No scan sector messages have been received in the last " << std::setprecision(3) << elapsed_time.toSec()
-                                                                << " seconds (since " << m_scan_stamp
+                                                                << " seconds (since " << scan_stamp
                                                                 << "). Resetting the lidar.");
     ROS_WARN_STREAM("Scan sector watchdog found an issue. Trying to reconnect to lidar.");
     triggerReconfigure();
@@ -979,7 +985,8 @@ bool SickSafetyscannersRos::configure()
     m_device = std::make_shared<sick::SickSafetyscanners>(
       boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
       &m_communication_settings,
-      m_interface_ip);
+      m_interface_ip,
+      std::chrono::duration<double>(m_tcp_connect_timeout));
     m_device->run();
     readTypeCodeSettings();
 
@@ -997,7 +1004,7 @@ bool SickSafetyscannersRos::configure()
       std::lock_guard<std::mutex> lock(m_watchdog_mutex);
       m_configured_stamp = ros::Time::now();
     }
-    ROS_INFO("Successfully launched node.");
+    ROS_INFO("Successfully configured lidar.");
   }
   catch (const std::exception& e)
   {

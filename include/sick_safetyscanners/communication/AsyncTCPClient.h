@@ -89,7 +89,7 @@ public:
   /*!
    * \brief Establishes a connection from the host to the sensor.
    */
-  bool doConnect(const std::chrono::seconds& wait_for_connect = std::chrono::seconds(-1));
+  bool doConnect(const std::chrono::duration<double> wait_for_connect = std::chrono::duration<double>(-1.0));
 
   /*!
    * \brief Disconnects the host from the sensor

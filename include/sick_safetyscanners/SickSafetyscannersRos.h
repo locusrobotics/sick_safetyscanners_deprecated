@@ -201,6 +201,11 @@ private:
    */
   ros::Duration m_reconfiguration_timeout { 5.0 };
 
+  /**
+   * @brief TCP connect timeout, in seconds
+   */
+  double m_tcp_connect_timeout { 5.0 };
+
   bool m_use_sick_angles;
   float m_angle_offset;
   bool m_use_pers_conf;
