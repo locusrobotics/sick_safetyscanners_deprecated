@@ -40,8 +40,10 @@ namespace sick {
 SickSafetyscanners::SickSafetyscanners(
   const packetReceivedCallbackFunction& newPacketReceivedCallbackFunction,
   sick::datastructure::CommSettings* settings,
-  boost::asio::ip::address_v4 interface_ip)
-  : m_newPacketReceivedCallbackFunction(newPacketReceivedCallbackFunction)
+  boost::asio::ip::address_v4 interface_ip,
+  const std::chrono::duration<double> tcp_connect_timeout) :
+  m_newPacketReceivedCallbackFunction(newPacketReceivedCallbackFunction),
+  m_tcp_connect_timeout(tcp_connect_timeout)
 {
   ROS_INFO("Starting SickSafetyscanners");
   m_io_service_ptr = std::make_shared<boost::asio::io_service>();
@@ -245,7 +247,13 @@ void SickSafetyscanners::startTCPConnection(const sick::datastructure::CommSetti
       boost::ref(*m_io_service_ptr),
       settings.getSensorIp(),
       settings.getSensorTcpPort());
-  async_tcp_client->doConnect();
+
+  if (!async_tcp_client->doConnect(m_tcp_connect_timeout))
+  {
+    std::stringstream ss;
+    ss << "Could not connect to " << settings.getSensorIp() << " : " << settings.getSensorTcpPort() << "\n";
+    throw std::runtime_error(ss.str());
+  }
 
   m_session_ptr.reset();
   m_session_ptr = std::make_shared<sick::cola2::Cola2Session>(async_tcp_client);

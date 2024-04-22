@@ -85,23 +85,29 @@ void AsyncTCPClient::doDisconnect()
   }
 }
 
-void AsyncTCPClient::doConnect()
+bool AsyncTCPClient::doConnect(const std::chrono::duration<double> wait_for_connect)
 {
   boost::mutex::scoped_lock lock(m_socket_mutex);
-  boost::mutex::scoped_lock lock_connect(m_connect_mutex);
-  m_socket_ptr->async_connect(m_remote_endpoint, [this](boost::system::error_code ec) {
-    if (ec != boost::system::errc::success)
+  auto connect_future = m_socket_ptr->async_connect(m_remote_endpoint, boost::asio::use_future);
+  if (wait_for_connect >= std::chrono::seconds(0))
+  {
+    if (std::future_status::ready != connect_future.wait_for(wait_for_connect))
     {
-      ROS_ERROR("TCP error code: %i", ec.value());
+      ROS_ERROR_STREAM("Connect Timed out...");
+      return false;
     }
-    else
-    {
-      ROS_INFO("TCP connection successfully established.");
-    }
-    m_connect_condition.notify_all();
-  });
-
-  m_connect_condition.wait(lock_connect);
+  }
+  try
+  {
+    connect_future.get();
+    ROS_INFO("TCP connection successfully established.");
+  }
+  catch (const boost::system::system_error& error)
+  {
+    ROS_ERROR_STREAM("Failed to connect: " << error.what());
+    return false;
+  }
+  return true;
 }
 
 
@@ -147,7 +153,7 @@ void AsyncTCPClient::handleSendAndReceive(const boost::system::error_code& error
   }
   else
   {
-    ROS_ERROR("Error in tcp handle send and receive: %i", error.value());
+    ROS_ERROR_STREAM("Error in tcp handle send and receive: " << error.message());
   }
 }
 

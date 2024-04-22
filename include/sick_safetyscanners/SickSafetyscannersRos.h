@@ -147,7 +147,32 @@ private:
   ros::ServiceServer m_config_metadata_server;
   ros::ServiceServer m_status_overview_server;
 
-  bool m_initialised;
+  std::atomic_bool m_initialised;
+
+  /**
+   * @brief Configure Timer
+   */
+  ros::Timer m_configure_timer;
+
+  /**
+   * @brief Synchronization guard for watchdog variables accessed by ROS and lidar callbacks
+   */
+  std::mutex m_watchdog_mutex;
+
+  /**
+   * @brief Watchdog timer to reconnect if no sectors are received
+   */
+  ros::Timer m_scan_watchdog_timer;
+
+  /**
+   * @brief The last received scan sector timestamp
+   */
+  ros::Time m_scan_stamp;
+
+  /**
+   * @brief The last time the lidar was configured
+   */
+  ros::Time m_configured_stamp;
 
   std::shared_ptr<sick::SickSafetyscanners> m_device;
 
@@ -166,6 +191,20 @@ private:
   double m_timestamp_min_acceptable = -1.0;
   double m_timestamp_max_acceptable = 1.0;
   double m_min_intensities          = 0.0; /*!< min intensities for laser points */
+  /**
+   * @brief If no scan sectors have been received after this many seconds, reconnect to the lidar
+   */
+  ros::Duration m_scan_timeout { 5.0 };
+
+  /**
+   * @brief Period between lidar reconfiguration attempts
+   */
+  ros::Duration m_reconfiguration_timeout { 5.0 };
+
+  /**
+   * @brief TCP connect timeout, in seconds
+   */
+  double m_tcp_connect_timeout { 5.0 };
 
   bool m_use_sick_angles;
   float m_angle_offset;
@@ -250,6 +289,30 @@ private:
    * @return date string in the format YYYY-mm-DD HH:MM:SS
    */
   std::string getDateString(uint32_t days_since_1972, uint32_t milli_seconds);
+
+  /**
+   * @brief Connect and configure
+   *
+   * @return true if successfully connected
+   */
+  bool configure();
+
+  /**
+   * @brief Attempt to connect to and configure the lidar in response to a timer event
+   *
+   * @param[in] event - Timer event
+   */
+  void configureTimerCallback(const ros::TimerEvent& event);
+
+  /**
+   * @brief Check for scan outages timer callback
+   */
+  void scanWatchdogTimerCallback(const ros::TimerEvent& event);
+
+  /**
+   * @brief Trigger reconfigure routine
+   */
+  void triggerReconfigure();
 };
 
 } // namespace sick

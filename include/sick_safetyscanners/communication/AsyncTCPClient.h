@@ -89,7 +89,7 @@ public:
   /*!
    * \brief Establishes a connection from the host to the sensor.
    */
-  void doConnect();
+  bool doConnect(const std::chrono::duration<double> wait_for_connect = std::chrono::duration<double>(-1.0));
 
   /*!
    * \brief Disconnects the host from the sensor
@@ -125,9 +125,6 @@ private:
   std::shared_ptr<boost::asio::ip::tcp::socket> m_socket_ptr;
   boost::asio::ip::tcp::endpoint m_remote_endpoint;
   std::thread m_service_thread;
-
-  boost::condition m_connect_condition;
-  boost::mutex m_connect_mutex;
   boost::mutex m_socket_mutex;
 
   void startReceive();
