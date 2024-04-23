@@ -114,9 +114,10 @@ SickSafetyscannersRos::SickSafetyscannersRos(bool getCheck)
     m_nh.advertiseService("config_metadata", &SickSafetyscannersRos::getConfigMetadata, this);
 
   m_device = std::make_shared<sick::SickSafetyscanners>(
-    boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
-    &m_communication_settings,
-    m_interface_ip);
+      boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
+      &m_communication_settings,
+      m_interface_ip,
+      std::chrono::duration<double>(m_tcp_connect_timeout));
 
   m_device->run();
   m_device->requestConfigMetadata(m_communication_settings, config_meta_data);
