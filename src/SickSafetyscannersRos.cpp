@@ -94,6 +94,37 @@ SickSafetyscannersRos::SickSafetyscannersRos()
   }
 }
 
+SickSafetyscannersRos::SickSafetyscannersRos(bool getCheck)
+  : m_private_nh("~")
+  , m_initialised(false)
+  , m_time_offset(0.0)
+  , m_range_min(0.0)
+  , m_range_max(0.0)
+  , m_angle_offset(-90.0)
+  , m_use_pers_conf(false)
+{
+  if (!readParameters())
+  {
+    ROS_ERROR("Could not read parameters.");
+    ros::requestShutdown();
+  }
+  m_communication_settings.setSensorTcpPort(2122);
+
+  m_config_metadata_server =
+    m_nh.advertiseService("config_metadata", &SickSafetyscannersRos::getConfigMetadata, this);
+
+  m_device = std::make_shared<sick::SickSafetyscanners>(
+      boost::bind(&SickSafetyscannersRos::receivedUDPPacket, this, _1),
+      &m_communication_settings,
+      m_interface_ip,
+      std::chrono::duration<double>(m_tcp_connect_timeout));
+
+  m_device->run();
+  m_device->requestConfigMetadata(m_communication_settings, config_meta_data);
+
+  ROS_INFO_STREAM("Checksum: " + getCheckSumString(config_meta_data.getAppChecksum()));
+}
+
 void SickSafetyscannersRos::readTypeCodeSettings()
 {
   ROS_INFO("Reading Type code settings");
@@ -925,10 +956,14 @@ bool SickSafetyscannersRos::getStatusOverview(sick_safetyscanners::StatusOvervie
 std::string SickSafetyscannersRos::getCheckSumString(uint32_t checksum)
 {
   std::stringstream ss;
-  ss << "0x" << std::hex << (checksum & 0xFF) << ((checksum & 0xFF00) >> 8)
-     << ((checksum & 0xFF0000) >> 16) << ((checksum & 0xFF000000) >> 24);
+  ss << "0x" << std::hex
+     << ((checksum & 0xFF000000) >> 24)
+     << ((checksum & 0xFF0000) >> 16)
+     << ((checksum & 0xFF00) >> 8)
+     << (checksum & 0xFF);
   return ss.str();
 }
+
 
 std::string SickSafetyscannersRos::getDateString(uint32_t days_since_1972, uint32_t milli_seconds)
 {
