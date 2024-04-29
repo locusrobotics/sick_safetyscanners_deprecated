@@ -21,20 +21,17 @@ public:
         current_safety_field_.angle_min = field_data_.response.fields[dtz].start_angle;
         current_safety_field_.angle_max = field_data_.response.fields[dtz].start_angle + field_data_.response.fields[dtz].angular_resolution * field_data_.response.fields[dtz].ranges.size();
         current_safety_field_.angle_increment = field_data_.response.fields[dtz].angular_resolution;
-        // current_safety_field_.ranges = field_data.response.fields[augment].ranges;
         current_safety_field_.range_min = 0.01;
         current_safety_field_.range_max = 8.0;
 
-        // Subscribe to the raw microscan data
+        // Subscribe to the active monitoring case
         raw_data_sub_ = nh_.subscribe("/" + robot + "/" + laser + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
     }
 
     void microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg) {
         current_safety_field_.header.stamp = ros::Time::now();
-        current_safety_field_.ranges = field_data_.response.fields[field_data_.response.monitoring_cases[msg->active_monitoring_case].fields[dtz_]].ranges;
-        // current_safety_field_.ranges = field_data_.response.fields[0].ranges;
-        ROS_INFO_STREAM("Here: " << msg->active_monitoring_case);
-        ROS_INFO_STREAM("Here2: " << field_data_.response.monitoring_cases[msg->active_monitoring_case-1].fields[dtz_]);
+        current_safety_field_.ranges = field_data_.response.fields[field_data_.response.monitoring_cases[msg->active_monitoring_case-1].fields[dtz_]-1].ranges;
+      
         safety_field_pub_.publish(current_safety_field_);
     }
 
@@ -54,7 +51,7 @@ private:
 int main(int argc, char** argv) {
     ros::init(argc, argv, "sick_viz");
 
-    std::string robot_name = "v2_19811";
+    std::string robot_name = "v2_19814";
     SafetyFieldVisualizer left_protective(robot_name, "left", false);
     SafetyFieldVisualizer right_protective(robot_name, "right", false);
     SafetyFieldVisualizer rear_protective(robot_name, "rear", false);
