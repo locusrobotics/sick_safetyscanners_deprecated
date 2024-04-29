@@ -202,6 +202,11 @@ add_executable(${PROJECT_NAME}_node
   src/SickSafetyscannersRos.cpp
 )
 
+## Declare cpp executables
+add_executable(sick_viz
+  nodes/sick_viz.cpp
+)
+
 ## Add dependencies to exported targets, like ROS msgs or srvs
 add_dependencies(${PROJECT_NAME}_core
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
@@ -213,12 +218,22 @@ add_dependencies(${PROJECT_NAME}_node
   ${catkin_EXPORTED_TARGETS}
 )
 
+add_dependencies(sick_viz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}_core
   ${catkin_LIBRARIES}
 )
 
 target_link_libraries(${PROJECT_NAME}_node
+  ${PROJECT_NAME}_core
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(sick_viz
   ${PROJECT_NAME}_core
   ${catkin_LIBRARIES}
 )
@@ -238,6 +253,13 @@ install(
 
 install(
   TARGETS ${PROJECT_NAME}_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  TARGETS sick_viz
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
