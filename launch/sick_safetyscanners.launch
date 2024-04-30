@@ -18,9 +18,6 @@
   <arg name="application_io_data"   default="True" />
   <arg name="use_persistent_config"   default="False" />
   <arg name="get_crc"               default="False"/>
-  <arg name="use_viz"               default="False"/>
-  <arg name="robot_name"            default="$(optenv ROBOT robot)"/>
-
 
   <!-- Launch Sick SickSafetyscanners Ros Driver Node -->
   <node pkg="sick_safetyscanners" type="sick_safetyscanners_node" name="sick_safetyscanners" output="screen" ns="sick_safetyscanners">
@@ -45,8 +42,6 @@
      <param name="get_crc"                type="bool"   value="$(arg get_crc)" />
   </node>
 
-  <node pkg="sick_safetyscanners" type="sick_viz" name="sick_viz" output="screen" if="$(arg use_viz)">
-      <param name="robot_name" type="string" value="$(arg robot_name)"/>
-  </node>
-</launch>
 
+  <!-- node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" /-->
+</launch>
