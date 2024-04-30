@@ -16,30 +16,16 @@ public:
 
         ROS_INFO_STREAM("Number of fields: " << field_data_.response.fields.size());
 
-        // Flipping fields right side up
-        // // ROS_INFO_STREAM("HERE" << field_data_.response.fields[dtz].ranges)
-        // for(int i = 0; i < field_data_.response.fields.size(); i++) {
-        //     // for(int j = 0; j < field_data_.response.fields[i].ranges.size(); j++){
-        //     //     field_data_.response.fields[i].ranges[j] = field_data_.response.fields[i].ranges[j];
-        //     // }
-        //     int size = field_data_.response.fields[i].ranges.size();
-        //     for (int j = 0; j < size / 2; ++j) {
-        //         int temp = field_data_.response.fields[i].ranges[j];
-        //         field_data_.response.fields[i].ranges[j] = field_data_.response.fields[i].ranges[size - 1 - j];
-        //         field_data_.response.fields[i].ranges[size - 1 - j] = temp;
-        //     }
-        // }
-
         safety_field_pub_ = nh_.advertise
         <sensor_msgs::LaserScan>("/" + robot + "/" + laser + "_nanoscan/safety_field/" + zone_type_, 10);
-        current_safety_field_.header.frame_id = robot + "/" + laser + "_laser_link_flipped";
+        current_safety_field_.header.frame_id = robot + "/" + laser + "_laser_link";
         current_safety_field_.angle_min = field_data_.response.fields[dtz].start_angle;
         current_safety_field_.angle_max = field_data_.response.fields[dtz].start_angle + field_data_.response.fields[dtz].angular_resolution * field_data_.response.fields[dtz].ranges.size();
         current_safety_field_.angle_increment = field_data_.response.fields[dtz].angular_resolution;
         current_safety_field_.range_min = 0.01;
         current_safety_field_.range_max = 8.0;
 
-        // Subscribe to the active monitoring case
+        // Subscribe to the active monitoring case topic
         raw_data_sub_ = nh_.subscribe("/" + robot + "/" + laser + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
     }
 
@@ -65,8 +51,10 @@ private:
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "sick_viz");
+    ros::NodeHandle nh("~");
 
-    std::string robot_name = "v2_19814";
+    std::string robot_name;
+    nh.getParam("robot_name", robot_name);
     SafetyFieldVisualizer left_protective(robot_name, "left", false);
     SafetyFieldVisualizer right_protective(robot_name, "right", false);
     SafetyFieldVisualizer rear_protective(robot_name, "rear", false);
