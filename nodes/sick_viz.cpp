@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     nh.getParam("laser_name", laser_name);
 
     SafetyFieldVisualizer protective(robot_name, laser_name, false);
-    SafetyFieldVisualizer left_DTZ(robot_name, laser_name, true);
+    SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
 
     ros::spin();
 
