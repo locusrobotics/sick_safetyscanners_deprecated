@@ -54,13 +54,13 @@ int main(int argc, char** argv) {
     ros::NodeHandle nh("~");
 
     std::string robot_name;
+    std::string laser_name;
+
     nh.getParam("robot_name", robot_name);
-    SafetyFieldVisualizer left_protective(robot_name, "left", false);
-    SafetyFieldVisualizer right_protective(robot_name, "right", false);
-    SafetyFieldVisualizer rear_protective(robot_name, "rear", false);
-    SafetyFieldVisualizer left_DTZ(robot_name, "left", true);
-    SafetyFieldVisualizer right_DTZ(robot_name, "right", true);
-    SafetyFieldVisualizer rear_DTZ(robot_name, "rear", true);
+    nh.getParam("laser_name", laser_name);
+
+    SafetyFieldVisualizer protective(robot_name, laser_name, false);
+    SafetyFieldVisualizer left_DTZ(robot_name, laser_name, true);
 
     ros::spin();
 
