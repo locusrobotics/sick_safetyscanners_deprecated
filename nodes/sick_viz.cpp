@@ -15,9 +15,24 @@ public:
         zone_type_ = (dtz) ? "DTZ":"protective";
 
         ROS_INFO_STREAM("Number of fields: " << field_data_.response.fields.size());
+
+        // Flipping fields right side up
+        // // ROS_INFO_STREAM("HERE" << field_data_.response.fields[dtz].ranges)
+        // for(int i = 0; i < field_data_.response.fields.size(); i++) {
+        //     // for(int j = 0; j < field_data_.response.fields[i].ranges.size(); j++){
+        //     //     field_data_.response.fields[i].ranges[j] = field_data_.response.fields[i].ranges[j];
+        //     // }
+        //     int size = field_data_.response.fields[i].ranges.size();
+        //     for (int j = 0; j < size / 2; ++j) {
+        //         int temp = field_data_.response.fields[i].ranges[j];
+        //         field_data_.response.fields[i].ranges[j] = field_data_.response.fields[i].ranges[size - 1 - j];
+        //         field_data_.response.fields[i].ranges[size - 1 - j] = temp;
+        //     }
+        // }
+
         safety_field_pub_ = nh_.advertise
         <sensor_msgs::LaserScan>("/" + robot + "/" + laser + "_nanoscan/safety_field/" + zone_type_, 10);
-        current_safety_field_.header.frame_id = robot + "/" + laser + "_laser_link";
+        current_safety_field_.header.frame_id = robot + "/" + laser + "_laser_link_flipped";
         current_safety_field_.angle_min = field_data_.response.fields[dtz].start_angle;
         current_safety_field_.angle_max = field_data_.response.fields[dtz].start_angle + field_data_.response.fields[dtz].angular_resolution * field_data_.response.fields[dtz].ranges.size();
         current_safety_field_.angle_increment = field_data_.response.fields[dtz].angular_resolution;
