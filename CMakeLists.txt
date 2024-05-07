@@ -202,7 +202,6 @@ add_executable(${PROJECT_NAME}_node
   src/SickSafetyscannersRos.cpp
 )
 
-## Declare cpp executables
 add_executable(sick_viz
   nodes/sick_viz.cpp
 )
@@ -219,7 +218,6 @@ add_dependencies(${PROJECT_NAME}_node
 )
 
 add_dependencies(sick_viz
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
 
@@ -234,7 +232,6 @@ target_link_libraries(${PROJECT_NAME}_node
 )
 
 target_link_libraries(sick_viz
-  ${PROJECT_NAME}_core
   ${catkin_LIBRARIES}
 )
 
@@ -260,8 +257,6 @@ install(
 
 install(
   TARGETS sick_viz
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -272,6 +267,13 @@ install(
   FILES_MATCHING
     PATTERN "*.h"
     PATTERN "*.hpp"
+)
+
+install(
+  DIRECTORY include/sick_viz/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING
+    PATTERN "*.h"
 )
 
 # Mark other files for installation
