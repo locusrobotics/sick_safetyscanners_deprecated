@@ -28,7 +28,9 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
     current_safety_field_.header.stamp = ros::Time::now();
     current_safety_field_.ranges = field_data_.response.fields[field_data_.response.monitoring_cases[msg->active_monitoring_case - 1].fields[dtz_]-1].ranges;
 
-    safety_field_pub_.publish(current_safety_field_);
+    if (safety_field_pub_.getNumSubscribers() > 0) {
+        safety_field_pub_.publish(current_safety_field_);
+    }
 }
 
 int main(int argc, char** argv) {
