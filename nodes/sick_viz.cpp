@@ -11,6 +11,9 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
     zone_type_ = (dtz) ? "DTZ" : "protective";
 
     ROS_INFO_STREAM("Number of fields: " << field_data_.response.fields.size());
+    if (field_data_.response.fields.empty() ) {
+        return;
+    }
 
     safety_field_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/" + robot + "/" + laser + "_nanoscan/safety_field/" + zone_type_, 10);
     current_safety_field_.header.frame_id = robot + "/" + laser + "_laser_link";
