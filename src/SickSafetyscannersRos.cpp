@@ -956,11 +956,11 @@ bool SickSafetyscannersRos::getStatusOverview(sick_safetyscanners::StatusOvervie
 std::string SickSafetyscannersRos::getCheckSumString(uint32_t checksum)
 {
   std::stringstream ss;
-  ss << "0x" << std::hex
-     << ((checksum & 0xFF000000) >> 24)
-     << ((checksum & 0xFF0000) >> 16)
-     << ((checksum & 0xFF00) >> 8)
-     << (checksum & 0xFF);
+  ss << "0x"
+     << std::setfill('0') << std::setw(2) << std::hex << ((checksum & 0xFF000000) >> 24)
+     << std::setfill('0') << std::setw(2) << std::hex << ((checksum & 0xFF0000) >> 16)
+     << std::setfill('0') << std::setw(2) << std::hex << ((checksum & 0xFF00) >> 8)
+     << std::setfill('0') << std::setw(2) << std::hex << (checksum & 0xFF);
   return ss.str();
 }
 
