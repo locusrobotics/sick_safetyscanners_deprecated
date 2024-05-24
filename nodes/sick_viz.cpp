@@ -1,14 +1,16 @@
 #include "ros/ros.h"
 #include "sick_viz/SickViz.h"
 
+namespace sick 
+{
 
 SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz)
-    : robot_(robot), laser_(laser), dtz_(dtz) {
+    : dtz_(dtz) {
     // Wait for the service to get the field data
     ros::service::waitForService("/" + robot + "/" + laser + "_nanoscan/field_data", ros::Duration(5));
     field_data_client_ = nh_.serviceClient<sick_safetyscanners::FieldData>("/" + robot + "/" + laser + "_nanoscan/field_data");
     field_data_client_.call(field_data_);
-    zone_type_ = (dtz) ? "DTZ" : "protective";
+    zone_type_ = (dtz) ? "dtz" : "protective";
 
     ROS_INFO_STREAM("Number of fields: " << field_data_.response.fields.size());
     if (field_data_.response.fields.empty() ) {
@@ -36,6 +38,8 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
     }
 }
 
+}  // namespace sick
+
 int main(int argc, char** argv) {
     ros::init(argc, argv, "sick_viz");
     ros::NodeHandle nh("~");
@@ -46,8 +50,8 @@ int main(int argc, char** argv) {
     nh.getParam("robot_name", robot_name);
     nh.getParam("laser_name", laser_name);
 
-    SafetyFieldVisualizer protective(robot_name, laser_name, false);
-    SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
+    sick::SafetyFieldVisualizer protective(robot_name, laser_name, false);
+    sick::SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
 
     ros::spin();
 

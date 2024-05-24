@@ -7,6 +7,10 @@
 #include "sick_safetyscanners/FieldData.h"
 #include "sick_safetyscanners/OutputPathsMsg.h"
 
+namespace sick {
+/**
+* @brief SafetyFieldVisualizer object that takes in a lidar name and publishes safety fields
+*/
 class SafetyFieldVisualizer {
 public:
     SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz = false);
@@ -19,11 +23,11 @@ private:
     ros::Publisher safety_field_pub_;
     ros::Subscriber raw_data_sub_;
     sensor_msgs::LaserScan current_safety_field_;
-    std::string robot_;
-    std::string laser_;
     bool dtz_;
     std::string zone_type_;
     sick_safetyscanners::FieldData field_data_;
 };
+
+}  // namespace sick
 
 #endif  // SICK_SAFETYSCANNERS_SICKVIZ_H
