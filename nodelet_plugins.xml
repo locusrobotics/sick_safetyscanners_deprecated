@@ -1,0 +1,5 @@
+<library path="lib/libsick_safetyscanners_nodelet">
+  <class name="sick_safetyscanners/sick_safetyscanners_nodelet" type="sick_safetyscanners::SickSafetyscannersNodelet" base_class_type="nodelet::Nodelet">
+    <description> Sick SafetyScanners Nodelet </description>
+  </class>
+</library>

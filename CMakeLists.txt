@@ -14,6 +14,7 @@ find_package(catkin REQUIRED
     diagnostic_updater
     dynamic_reconfigure
     message_generation
+    nodelet
     roscpp
     sensor_msgs
     std_msgs
@@ -78,6 +79,7 @@ catkin_package(
   CATKIN_DEPENDS
     dynamic_reconfigure
     message_runtime
+    nodelet
     roscpp
     sensor_msgs
     std_msgs
@@ -206,6 +208,12 @@ add_executable(sick_viz
   nodes/sick_viz.cpp
 )
 
+# Add nodelets
+add_library(${PROJECT_NAME}_nodelet
+  nodes/sick_safetyscanners_nodelet.cpp
+  src/SickSafetyscannersRos.cpp
+)
+
 ## Add dependencies to exported targets, like ROS msgs or srvs
 add_dependencies(${PROJECT_NAME}_core
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
@@ -221,6 +229,11 @@ add_dependencies(sick_viz
   ${catkin_EXPORTED_TARGETS}
 )
 
+add_dependencies(${PROJECT_NAME}_nodelet
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}_core
   ${catkin_LIBRARIES}
@@ -232,6 +245,17 @@ target_link_libraries(${PROJECT_NAME}_node
 )
 
 target_link_libraries(sick_viz
+  ${catkin_LIBRARIES}
+)
+
+
+target_include_directories(${PROJECT_NAME}_nodelet
+  PRIVATE
+    ${catkin_INCLUDE_DIRS}
+)
+target_link_libraries(${PROJECT_NAME}_nodelet
+  ${PROJECT_NAME}_core
+  ${Boost_LIBRARIES}
   ${catkin_LIBRARIES}
 )
 
@@ -250,6 +274,13 @@ install(
 
 install(
   TARGETS ${PROJECT_NAME}_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_nodelet
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -279,6 +310,10 @@ install(
 # Mark other files for installation
 install(
   DIRECTORY docs launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(FILES nodelet_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

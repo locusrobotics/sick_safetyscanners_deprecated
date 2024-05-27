@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+
+<arg name="nodelet_manager_name" value="sick_nodelet"/>
+
+
+    <group>
+        <!-- Sick SafetyScanners nodelet -->
+        <rosparam file="$(find sick_safetyscanners)/launch/config/sick_safetyscanners.yaml" command="load" subst_value="true"/>
+
+        <!-- Nodelet manager -->
+        <node pkg="locus_nodelet_manager" type="locus_nodelet_manager" name="$(arg nodelet_manager_name)"
+            respawn="true" respawn_delay="$(optenv LOCUS_RESPAWN_DELAY 10)" output="screen">
+        </node>
+    </group>
+
+
+</launch>
