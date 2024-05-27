@@ -2,6 +2,8 @@ $(arg nodelet_manager_name):
   nodelets:
     sick_nanoscan:
       type: sick_safetyscanners/sick_safetyscanners_nodelet
+    sick_viz:
+      type: sick_safetyscanners/sick_viz_nodelet
 
 sick_nanoscan:
   sensor_ip: 192.168.1.11
@@ -22,3 +24,7 @@ sick_nanoscan:
   intrusion_data: True
   application_io_data: True
   use_persistent_config: False
+
+sick_viz:
+  robot_name: $(arg robot_name)
+  laser_name: $(arg laser_name)

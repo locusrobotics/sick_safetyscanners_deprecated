@@ -3,3 +3,9 @@
     <description> Sick SafetyScanners Nodelet </description>
   </class>
 </library>
+
+<library path="lib/libsick_viz_nodelet">
+ <class name="sick_safetyscanners/sick_viz_nodelet" type="sick_safetyscanners::SickVizNodelet" base_class_type="nodelet::Nodelet">
+    <description> Sick SafetyScanners Nodelet </description>
+  </class>
+</library>

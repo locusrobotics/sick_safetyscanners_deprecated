@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
 
-<arg name="nodelet_manager_name" value="sick_nodelet"/>
-
+    <arg name="nodelet_manager_name" default="sick_nodelet"/>
+    <arg name="robot_name" default="$(optenv ROBOT robot)"/>
+    <arg name="laser_name" default="laser"/>
 
     <group>
         <!-- Sick SafetyScanners nodelet -->
@@ -13,6 +14,5 @@
             respawn="true" respawn_delay="$(optenv LOCUS_RESPAWN_DELAY 10)" output="screen">
         </node>
     </group>
-
 
 </launch>

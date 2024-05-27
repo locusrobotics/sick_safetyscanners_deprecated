@@ -214,6 +214,11 @@ add_library(${PROJECT_NAME}_nodelet
   src/SickSafetyscannersRos.cpp
 )
 
+add_library(sick_viz_nodelet
+  nodes/sick_viz_nodelet.cpp
+  nodes/sick_viz.cpp
+)
+
 ## Add dependencies to exported targets, like ROS msgs or srvs
 add_dependencies(${PROJECT_NAME}_core
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
@@ -234,6 +239,11 @@ add_dependencies(${PROJECT_NAME}_nodelet
   ${catkin_EXPORTED_TARGETS}
 )
 
+add_dependencies(sick_viz_nodelet
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}_core
   ${catkin_LIBRARIES}
@@ -248,7 +258,6 @@ target_link_libraries(sick_viz
   ${catkin_LIBRARIES}
 )
 
-
 target_include_directories(${PROJECT_NAME}_nodelet
   PRIVATE
     ${catkin_INCLUDE_DIRS}
@@ -256,6 +265,14 @@ target_include_directories(${PROJECT_NAME}_nodelet
 target_link_libraries(${PROJECT_NAME}_nodelet
   ${PROJECT_NAME}_core
   ${Boost_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
+
+target_include_directories(sick_viz_nodelet
+  PRIVATE
+    ${catkin_INCLUDE_DIRS}
+)
+target_link_libraries(sick_viz_nodelet
   ${catkin_LIBRARIES}
 )
 
@@ -281,6 +298,14 @@ install(
 
 install(
   TARGETS ${PROJECT_NAME}_nodelet
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+
+install(
+  TARGETS sick_viz_nodelet
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
