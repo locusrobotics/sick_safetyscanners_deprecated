@@ -235,11 +235,11 @@ private:
   bool isInitialised();
 
   sensor_msgs::LaserScanPtr createLaserScanMessage(const sick::datastructure::Data& data);
-  sick_safetyscanners::ExtendedLaserScanMsg
+  sick_safetyscanners::ExtendedLaserScanMsgPtr
   createExtendedLaserScanMessage(const sick::datastructure::Data& data);
   std::vector<bool>
   getMedianReflectors(const std::vector<sick::datastructure::ScanPoint> scan_points);
-  sick_safetyscanners::OutputPathsMsg
+  sick_safetyscanners::OutputPathsMsgPtr
   createOutputPathsMessage(const sick::datastructure::Data& data);
   sick_safetyscanners::RawMicroScanDataMsg
   createRawDataMessage(const sick::datastructure::Data& data);

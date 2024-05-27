@@ -316,11 +316,11 @@ void SickSafetyscannersRos::receivedUDPPacket(const sick::datastructure::Data& d
 
   if (!data.getMeasurementDataPtr()->isEmpty() && !data.getDerivedValuesPtr()->isEmpty())
   {
-    sick_safetyscanners::ExtendedLaserScanMsg extended_scan = createExtendedLaserScanMessage(data);
+    sick_safetyscanners::ExtendedLaserScanMsgPtr extended_scan = createExtendedLaserScanMessage(data);
 
     m_extended_laser_scan_publisher.publish(extended_scan);
 
-    sick_safetyscanners::OutputPathsMsg output_paths = createOutputPathsMessage(data);
+    sick_safetyscanners::OutputPathsMsgPtr output_paths = createOutputPathsMessage(data);
     m_output_path_publisher.publish(output_paths);
   }
 
@@ -403,28 +403,28 @@ void SickSafetyscannersRos::sensorDiagnostics(
   }
 }
 
-sick_safetyscanners::ExtendedLaserScanMsg
+sick_safetyscanners::ExtendedLaserScanMsgPtr
 SickSafetyscannersRos::createExtendedLaserScanMessage(const sick::datastructure::Data& data)
 {
   auto scan = createLaserScanMessage(data);
-  sick_safetyscanners::ExtendedLaserScanMsg msg;
-  msg.laser_scan = *scan;
+  auto msg = boost::make_shared<sick_safetyscanners::ExtendedLaserScanMsg>();
+  msg->laser_scan = *scan;
 
   std::vector<sick::datastructure::ScanPoint> scan_points =
     data.getMeasurementDataPtr()->getScanPointsVector();
   uint32_t num_scan_points = scan_points.size();
 
 
-  msg.reflektor_status.resize(num_scan_points);
-  msg.intrusion.resize(num_scan_points);
-  msg.reflektor_median.resize(num_scan_points);
+  msg->reflektor_status.resize(num_scan_points);
+  msg->intrusion.resize(num_scan_points);
+  msg->reflektor_median.resize(num_scan_points);
   std::vector<bool> medians = getMedianReflectors(scan_points);
   for (uint32_t i = 0; i < num_scan_points; ++i)
   {
     const sick::datastructure::ScanPoint scan_point = scan_points.at(i);
-    msg.reflektor_status[i]                         = scan_point.getReflectorBit();
-    msg.intrusion[i]                                = scan_point.getContaminationBit();
-    msg.reflektor_median[i]                         = medians.at(i);
+    msg->reflektor_status[i]                        = scan_point.getReflectorBit();
+    msg->intrusion[i]                               = scan_point.getContaminationBit();
+    msg->reflektor_median[i]                        = medians.at(i);
   }
   return msg;
 }
@@ -512,10 +512,10 @@ SickSafetyscannersRos::createLaserScanMessage(const sick::datastructure::Data& d
   return scan;
 }
 
-sick_safetyscanners::OutputPathsMsg
+sick_safetyscanners::OutputPathsMsgPtr
 SickSafetyscannersRos::createOutputPathsMessage(const sick::datastructure::Data& data)
 {
-  sick_safetyscanners::OutputPathsMsg msg;
+  auto msg = boost::make_shared<sick_safetyscanners::OutputPathsMsg>();
 
   std::shared_ptr<sick::datastructure::ApplicationData> app_data = data.getApplicationDataPtr();
   sick::datastructure::ApplicationOutputs outputs                = app_data->getOutputs();
@@ -530,18 +530,18 @@ SickSafetyscannersRos::createOutputPathsMessage(const sick::datastructure::Data&
   // Fix according to issue #46, however why this appears is not clear
   if (monitoring_case_number_flags.size() > 0)
   {
-    msg.active_monitoring_case = monitoring_case_numbers.at(0);
+    msg->active_monitoring_case = monitoring_case_numbers.at(0);
   }
   else
   {
-    msg.active_monitoring_case = 0;
+    msg->active_monitoring_case = 0;
   }
 
   for (size_t i = 0; i < eval_out.size(); i++)
   {
-    msg.status.push_back(eval_out.at(i));
-    msg.is_safe.push_back(eval_out_is_safe.at(i));
-    msg.is_valid.push_back(eval_out_valid.at(i));
+    msg->status.push_back(eval_out.at(i));
+    msg->is_safe.push_back(eval_out_is_safe.at(i));
+    msg->is_valid.push_back(eval_out_valid.at(i));
   }
   return msg;
 }
