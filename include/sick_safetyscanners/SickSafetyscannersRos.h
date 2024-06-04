@@ -114,8 +114,8 @@ public:
    * initialises the dynamic reconfiguration server. Furthermore initialises the ROS Publishers for
    * the different laserscan outputs.
    */
-  SickSafetyscannersRos(const ros::NodeHandle nodehandle);
-  SickSafetyscannersRos(const ros::NodeHandle nodehandle, bool getCheck);
+  SickSafetyscannersRos(const ros::NodeHandle &nodehandle);
+  SickSafetyscannersRos(const ros::NodeHandle &nodehandle, bool getCheck);
 
 
   /*!

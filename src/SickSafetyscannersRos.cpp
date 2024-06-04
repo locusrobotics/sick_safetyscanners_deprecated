@@ -38,8 +38,9 @@
 
 namespace sick {
 
-SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle nodehandle)
-  : m_private_nh(nodehandle)
+SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle &nodehandle)
+  : m_nh(nodehandle)
+  , m_private_nh(nodehandle)
   , m_initialised(false)
   , m_time_offset(0.0)
   , m_range_min(0.0)
@@ -94,7 +95,7 @@ SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle nodehandle)
   }
 }
 
-SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle nodehandle, bool getCheck)
+SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle &nodehandle, bool getCheck)
   : m_private_nh(nodehandle)
   , m_initialised(false)
   , m_time_offset(0.0)
