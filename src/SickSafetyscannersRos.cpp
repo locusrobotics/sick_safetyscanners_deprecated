@@ -317,11 +317,15 @@ void SickSafetyscannersRos::receivedUDPPacket(const sick::datastructure::Data& d
 
   if (!data.getMeasurementDataPtr()->isEmpty() && !data.getDerivedValuesPtr()->isEmpty())
   {
-    sick_safetyscanners::ExtendedLaserScanMsgPtr extended_scan = createExtendedLaserScanMessage(data);
+    sick_safetyscanners::ExtendedLaserScanMsgPtr extended_scan =
+      boost::make_shared<sick_safetyscanners::ExtendedLaserScanMsg>();
+    extended_scan = createExtendedLaserScanMessage(data);
 
     m_extended_laser_scan_publisher.publish(extended_scan);
 
-    sick_safetyscanners::OutputPathsMsgPtr output_paths = createOutputPathsMessage(data);
+    sick_safetyscanners::OutputPathsMsgPtr output_paths =
+      boost::make_shared<sick_safetyscanners::OutputPathsMsg>();
+    output_paths = createOutputPathsMessage(data);
     m_output_path_publisher.publish(output_paths);
   }
 

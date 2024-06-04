@@ -31,6 +31,12 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 
 void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg) {
     current_safety_field_.header.stamp = ros::Time::now();
+
+    if (msg->active_monitoring_case == 0)
+    {
+        return;
+    }
+
     current_safety_field_.ranges = field_data_.response.fields[field_data_.response.monitoring_cases[msg->active_monitoring_case - 1].fields[dtz_]-1].ranges;
 
     if (safety_field_pub_.getNumSubscribers() > 0) {
