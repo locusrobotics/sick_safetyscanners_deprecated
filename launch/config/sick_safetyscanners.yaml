@@ -1,0 +1,30 @@
+$(arg nodelet_manager_name):
+  nodelets:
+    sick_nanoscan:
+      type: sick_safetyscanners/sick_safetyscanners_nodelet
+    sick_viz:
+      type: sick_safetyscanners/sick_viz_nodelet
+
+sick_nanoscan:
+  sensor_ip: 192.168.1.11
+  host_ip: 192.168.1.9
+  interface_ip: 0.0.0.0
+  host_udp_port: 0
+  frame_id: scan
+  skip: 0
+  angle_start: 0
+  angle_end: 0
+  time_offset: 0.0
+  min_intensities: 0.0 # minimal intensity for a laserscan point
+  channel: 0
+  channel_enabled: True
+  general_system_state: True
+  derived_settings: True
+  measurement_data: True
+  intrusion_data: True
+  application_io_data: True
+  use_persistent_config: False
+
+sick_viz:
+  robot_name: $(arg robot_name)
+  laser_name: $(arg laser_name)

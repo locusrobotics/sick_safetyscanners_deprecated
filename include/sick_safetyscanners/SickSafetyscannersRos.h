@@ -114,8 +114,8 @@ public:
    * initialises the dynamic reconfiguration server. Furthermore initialises the ROS Publishers for
    * the different laserscan outputs.
    */
-  SickSafetyscannersRos();
-  SickSafetyscannersRos(bool getCheck);
+  SickSafetyscannersRos(const ros::NodeHandle &nodehandle);
+  SickSafetyscannersRos(const ros::NodeHandle &nodehandle, bool getCheck);
 
 
   /*!
@@ -234,12 +234,12 @@ private:
 
   bool isInitialised();
 
-  sensor_msgs::LaserScan createLaserScanMessage(const sick::datastructure::Data& data);
-  sick_safetyscanners::ExtendedLaserScanMsg
+  sensor_msgs::LaserScanPtr createLaserScanMessage(const sick::datastructure::Data& data);
+  sick_safetyscanners::ExtendedLaserScanMsgPtr
   createExtendedLaserScanMessage(const sick::datastructure::Data& data);
   std::vector<bool>
   getMedianReflectors(const std::vector<sick::datastructure::ScanPoint> scan_points);
-  sick_safetyscanners::OutputPathsMsg
+  sick_safetyscanners::OutputPathsMsgPtr
   createOutputPathsMessage(const sick::datastructure::Data& data);
   sick_safetyscanners::RawMicroScanDataMsg
   createRawDataMessage(const sick::datastructure::Data& data);

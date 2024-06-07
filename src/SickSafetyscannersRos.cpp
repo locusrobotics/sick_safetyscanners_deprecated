@@ -38,8 +38,9 @@
 
 namespace sick {
 
-SickSafetyscannersRos::SickSafetyscannersRos()
-  : m_private_nh("~")
+SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle &nodehandle)
+  : m_nh(nodehandle)
+  , m_private_nh(nodehandle)
   , m_initialised(false)
   , m_time_offset(0.0)
   , m_range_min(0.0)
@@ -94,8 +95,8 @@ SickSafetyscannersRos::SickSafetyscannersRos()
   }
 }
 
-SickSafetyscannersRos::SickSafetyscannersRos(bool getCheck)
-  : m_private_nh("~")
+SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle &nodehandle, bool getCheck)
+  : m_private_nh(nodehandle)
   , m_initialised(false)
   , m_time_offset(0.0)
   , m_range_min(0.0)
@@ -304,11 +305,11 @@ void SickSafetyscannersRos::receivedUDPPacket(const sick::datastructure::Data& d
 {
   if (!data.getMeasurementDataPtr()->isEmpty() && !data.getDerivedValuesPtr()->isEmpty())
   {
-    sensor_msgs::LaserScan scan = createLaserScanMessage(data);
+    auto scan = createLaserScanMessage(data);
     {
       // Update last received scan
       std::lock_guard<std::mutex> lock(m_watchdog_mutex);
-      m_scan_stamp = scan.header.stamp;
+      m_scan_stamp = scan->header.stamp;
     }
     m_diagnosed_laser_scan_publisher->publish(scan);
   }
@@ -316,11 +317,15 @@ void SickSafetyscannersRos::receivedUDPPacket(const sick::datastructure::Data& d
 
   if (!data.getMeasurementDataPtr()->isEmpty() && !data.getDerivedValuesPtr()->isEmpty())
   {
-    sick_safetyscanners::ExtendedLaserScanMsg extended_scan = createExtendedLaserScanMessage(data);
+    sick_safetyscanners::ExtendedLaserScanMsgPtr extended_scan =
+      boost::make_shared<sick_safetyscanners::ExtendedLaserScanMsg>();
+    extended_scan = createExtendedLaserScanMessage(data);
 
     m_extended_laser_scan_publisher.publish(extended_scan);
 
-    sick_safetyscanners::OutputPathsMsg output_paths = createOutputPathsMessage(data);
+    sick_safetyscanners::OutputPathsMsgPtr output_paths =
+      boost::make_shared<sick_safetyscanners::OutputPathsMsg>();
+    output_paths = createOutputPathsMessage(data);
     m_output_path_publisher.publish(output_paths);
   }
 
@@ -403,28 +408,28 @@ void SickSafetyscannersRos::sensorDiagnostics(
   }
 }
 
-sick_safetyscanners::ExtendedLaserScanMsg
+sick_safetyscanners::ExtendedLaserScanMsgPtr
 SickSafetyscannersRos::createExtendedLaserScanMessage(const sick::datastructure::Data& data)
 {
-  sensor_msgs::LaserScan scan = createLaserScanMessage(data);
-  sick_safetyscanners::ExtendedLaserScanMsg msg;
-  msg.laser_scan = scan;
+  auto scan = createLaserScanMessage(data);
+  auto msg = boost::make_shared<sick_safetyscanners::ExtendedLaserScanMsg>();
+  msg->laser_scan = *scan;
 
   std::vector<sick::datastructure::ScanPoint> scan_points =
     data.getMeasurementDataPtr()->getScanPointsVector();
   uint32_t num_scan_points = scan_points.size();
 
 
-  msg.reflektor_status.resize(num_scan_points);
-  msg.intrusion.resize(num_scan_points);
-  msg.reflektor_median.resize(num_scan_points);
+  msg->reflektor_status.resize(num_scan_points);
+  msg->intrusion.resize(num_scan_points);
+  msg->reflektor_median.resize(num_scan_points);
   std::vector<bool> medians = getMedianReflectors(scan_points);
   for (uint32_t i = 0; i < num_scan_points; ++i)
   {
     const sick::datastructure::ScanPoint scan_point = scan_points.at(i);
-    msg.reflektor_status[i]                         = scan_point.getReflectorBit();
-    msg.intrusion[i]                                = scan_point.getContaminationBit();
-    msg.reflektor_median[i]                         = medians.at(i);
+    msg->reflektor_status[i]                        = scan_point.getReflectorBit();
+    msg->intrusion[i]                               = scan_point.getContaminationBit();
+    msg->reflektor_median[i]                        = medians.at(i);
   }
   return msg;
 }
@@ -454,38 +459,38 @@ std::vector<bool> SickSafetyscannersRos::getMedianReflectors(
   return res;
 }
 
-sensor_msgs::LaserScan
+sensor_msgs::LaserScanPtr
 SickSafetyscannersRos::createLaserScanMessage(const sick::datastructure::Data& data)
 {
-  sensor_msgs::LaserScan scan;
-  scan.header.frame_id = m_frame_id;
-  scan.header.stamp    = ros::Time::now();
+  auto scan = boost::make_shared<sensor_msgs::LaserScan>();
+  scan->header.frame_id = m_frame_id;
+  scan->header.stamp    = ros::Time::now();
   // Add time offset (to account for network latency etc.)
-  scan.header.stamp += ros::Duration().fromSec(m_time_offset);
+  scan->header.stamp += ros::Duration().fromSec(m_time_offset);
   // TODO check why returned number of beams is misaligned to size of vector
   std::vector<sick::datastructure::ScanPoint> scan_points =
     data.getMeasurementDataPtr()->getScanPointsVector();
   uint32_t num_scan_points = scan_points.size();
 
-  scan.angle_min = sick::degToRad(data.getDerivedValuesPtr()->getStartAngle() + m_angle_offset);
+  scan->angle_min = sick::degToRad(data.getDerivedValuesPtr()->getStartAngle() + m_angle_offset);
   double angle_max =
     sick::degToRad(data.getMeasurementDataPtr()
                      ->getScanPointsVector()
                      .at(data.getMeasurementDataPtr()->getScanPointsVector().size() - 1)
                      .getAngle() +
                    m_angle_offset);
-  scan.angle_max       = angle_max;
-  scan.angle_increment = sick::degToRad(data.getDerivedValuesPtr()->getAngularBeamResolution());
+  scan->angle_max       = angle_max;
+  scan->angle_increment = sick::degToRad(data.getDerivedValuesPtr()->getAngularBeamResolution());
   boost::posix_time::microseconds time_increment =
     boost::posix_time::microseconds(data.getDerivedValuesPtr()->getInterbeamPeriod());
-  scan.time_increment = time_increment.total_microseconds() * 1e-6;
+  scan->time_increment = time_increment.total_microseconds() * 1e-6;
   boost::posix_time::milliseconds scan_time =
     boost::posix_time::milliseconds(data.getDerivedValuesPtr()->getScanTime());
-  scan.scan_time = scan_time.total_microseconds() * 1e-6;
-  scan.range_min = m_range_min;
-  scan.range_max = m_range_max;
-  scan.ranges.resize(num_scan_points);
-  scan.intensities.resize(num_scan_points);
+  scan->scan_time = scan_time.total_microseconds() * 1e-6;
+  scan->range_min = m_range_min;
+  scan->range_max = m_range_max;
+  scan->ranges.resize(num_scan_points);
+  scan->intensities.resize(num_scan_points);
 
 
   for (uint32_t i = 0; i < num_scan_points; ++i)
@@ -494,28 +499,28 @@ SickSafetyscannersRos::createLaserScanMessage(const sick::datastructure::Data& d
     // Filter for intensities
     if (m_min_intensities < static_cast<double>(scan_point.getReflectivity()))
     {
-      scan.ranges[i] = static_cast<float>(scan_point.getDistance()) *
+      scan->ranges[i] = static_cast<float>(scan_point.getDistance()) *
                        data.getDerivedValuesPtr()->getMultiplicationFactor() * 1e-3; // mm -> m
       // Set values close to/greater than max range to infinity according to REP 117
       // https://www.ros.org/reps/rep-0117.html
-      if (scan.ranges[i] >= (0.999 * m_range_max))
+      if (scan->ranges[i] >= (0.999 * m_range_max))
       {
-        scan.ranges[i] = std::numeric_limits<double>::infinity();
+        scan->ranges[i] = std::numeric_limits<double>::infinity();
       }
     }
     else
     {
-      scan.ranges[i] = std::numeric_limits<double>::infinity();
+      scan->ranges[i] = std::numeric_limits<double>::infinity();
     }
-    scan.intensities[i] = static_cast<float>(scan_point.getReflectivity());
+    scan->intensities[i] = static_cast<float>(scan_point.getReflectivity());
   }
   return scan;
 }
 
-sick_safetyscanners::OutputPathsMsg
+sick_safetyscanners::OutputPathsMsgPtr
 SickSafetyscannersRos::createOutputPathsMessage(const sick::datastructure::Data& data)
 {
-  sick_safetyscanners::OutputPathsMsg msg;
+  auto msg = boost::make_shared<sick_safetyscanners::OutputPathsMsg>();
 
   std::shared_ptr<sick::datastructure::ApplicationData> app_data = data.getApplicationDataPtr();
   sick::datastructure::ApplicationOutputs outputs                = app_data->getOutputs();
@@ -530,18 +535,18 @@ SickSafetyscannersRos::createOutputPathsMessage(const sick::datastructure::Data&
   // Fix according to issue #46, however why this appears is not clear
   if (monitoring_case_number_flags.size() > 0)
   {
-    msg.active_monitoring_case = monitoring_case_numbers.at(0);
+    msg->active_monitoring_case = monitoring_case_numbers.at(0);
   }
   else
   {
-    msg.active_monitoring_case = 0;
+    msg->active_monitoring_case = 0;
   }
 
   for (size_t i = 0; i < eval_out.size(); i++)
   {
-    msg.status.push_back(eval_out.at(i));
-    msg.is_safe.push_back(eval_out_is_safe.at(i));
-    msg.is_valid.push_back(eval_out_valid.at(i));
+    msg->status.push_back(eval_out.at(i));
+    msg->is_safe.push_back(eval_out_is_safe.at(i));
+    msg->is_valid.push_back(eval_out_valid.at(i));
   }
   return msg;
 }
