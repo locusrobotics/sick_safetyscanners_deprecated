@@ -7,9 +7,17 @@ namespace sick
 SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz)
     : dtz_(dtz) {
     // Wait for the service to get the field data
-    ros::service::waitForService("/" + robot + "/" + laser + "_nanoscan/field_data", ros::Duration(5));
+    if (!ros::service::waitForService("/" + robot + "/" + laser + "_nanoscan/field_data", ros::Duration(5))) {
+        ROS_ERROR("Service /%s/%s_nanoscan/field_data not available", robot.c_str(), laser.c_str());
+        throw std::runtime_error("Nanoscan field_data service not available");
+    }
+
     field_data_client_ = nh_.serviceClient<sick_safetyscanners::FieldData>("/" + robot + "/" + laser + "_nanoscan/field_data");
-    field_data_client_.call(field_data_);
+    if (!field_data_client_.call(field_data_)) {
+        ROS_ERROR("Failed to call service /%s/%s_nanoscan/field_data", robot.c_str(), laser.c_str());
+        throw std::runtime_error("Nanoscan field_data service call failed");
+    }
+
     zone_type_ = (dtz) ? "dtz" : "protective";
 
     ROS_INFO_STREAM("Number of fields: " << field_data_.response.fields.size());
@@ -56,8 +64,13 @@ int main(int argc, char** argv) {
     nh.getParam("robot_name", robot_name);
     nh.getParam("laser_name", laser_name);
 
-    sick::SafetyFieldVisualizer protective(robot_name, laser_name, false);
-    sick::SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
+    try {
+        sick::SafetyFieldVisualizer protective(robot_name, laser_name, false);
+        sick::SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
+    } catch (const std::runtime_error& e) {
+        ROS_FATAL("Sick viz crashed for laser %s: %s", laser_name.c_str(), e.what());
+        return 1;
+    }
 
     ros::spin();
 
