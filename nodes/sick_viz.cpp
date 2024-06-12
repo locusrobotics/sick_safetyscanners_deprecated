@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
         sick::SafetyFieldVisualizer protective(robot_name, laser_name, false);
         sick::SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
     } catch (const std::runtime_error& e) {
-        ROS_FATAL("Sick viz crashed for laser %s: %s", laser_name.c_str(), e.what());
+        ROS_ERROR("Sick viz crashed for laser %s: %s", laser_name.c_str(), e.what());
         return 1;
     }
 
