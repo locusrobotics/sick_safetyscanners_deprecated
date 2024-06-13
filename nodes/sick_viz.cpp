@@ -7,9 +7,17 @@ namespace sick
 SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz)
     : dtz_(dtz) {
     // Wait for the service to get the field data
-    ros::service::waitForService("/" + robot + "/" + laser + "_nanoscan/field_data", ros::Duration(5));
+    if (!ros::service::waitForService("/" + robot + "/" + laser + "_nanoscan/field_data")) {
+        ROS_ERROR("Service /%s/%s_nanoscan/field_data not available", robot.c_str(), laser.c_str());
+        throw std::runtime_error("Nanoscan field_data service not available");
+    }
+
     field_data_client_ = nh_.serviceClient<sick_safetyscanners::FieldData>("/" + robot + "/" + laser + "_nanoscan/field_data");
-    field_data_client_.call(field_data_);
+    if (!field_data_client_.call(field_data_)) {
+        ROS_ERROR("Failed to call service /%s/%s_nanoscan/field_data", robot.c_str(), laser.c_str());
+        throw std::runtime_error("Nanoscan field_data service call failed");
+    }
+
     zone_type_ = (dtz) ? "dtz" : "protective";
 
     ROS_INFO_STREAM("Number of fields: " << field_data_.response.fields.size());
@@ -32,12 +40,26 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg) {
     current_safety_field_.header.stamp = ros::Time::now();
 
-    if (msg->active_monitoring_case == 0)
-    {
-        return;
+    // If the active_case_index is out of bounds (when the lidars fault) don't publishing anything
+    int active_case_index = msg->active_monitoring_case - 1;
+    if (active_case_index < 0 || active_case_index >= field_data_.response.monitoring_cases.size()) {
+        ROS_WARN_STREAM("Invalid active monitoring case: " << active_case_index);
+        active_case_index = 0;
     }
 
-    current_safety_field_.ranges = field_data_.response.fields[field_data_.response.monitoring_cases[msg->active_monitoring_case - 1].fields[dtz_]-1].ranges;
+    // The field_index query will return 0 if there is no defined field for that monitoring case.
+    int field_index;
+    if (field_data_.response.monitoring_cases[active_case_index].fields[dtz_] == 0){
+        return;
+    }
+    else{
+        field_index = field_data_.response.monitoring_cases[active_case_index].fields[dtz_] - 1;
+    }
+    if (field_index < 0 || field_index >= field_data_.response.fields.size()) {
+        throw std::out_of_range("Field index is out of bounds");
+    }
+
+    current_safety_field_.ranges = field_data_.response.fields[field_index].ranges;
 
     if (safety_field_pub_.getNumSubscribers() > 0) {
         safety_field_pub_.publish(current_safety_field_);
@@ -56,8 +78,13 @@ int main(int argc, char** argv) {
     nh.getParam("robot_name", robot_name);
     nh.getParam("laser_name", laser_name);
 
-    sick::SafetyFieldVisualizer protective(robot_name, laser_name, false);
-    sick::SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
+    try {
+        sick::SafetyFieldVisualizer protective(robot_name, laser_name, false);
+        sick::SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
+    } catch (const std::runtime_error& e) {
+        ROS_FATAL("Sick viz crashed for laser %s: %s", laser_name.c_str(), e.what());
+        return 1;
+    }
 
     ros::spin();
 
