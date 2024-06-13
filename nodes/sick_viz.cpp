@@ -40,12 +40,24 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg) {
     current_safety_field_.header.stamp = ros::Time::now();
 
-    if (msg->active_monitoring_case == 0)
-    {
-        return;
+    int active_case_index = msg->active_monitoring_case - 1;
+    if (active_case_index < 0 || active_case_index >= field_data_.response.monitoring_cases.size()) {
+        throw std::out_of_range("Active monitoring case index is out of bounds");
     }
 
-    current_safety_field_.ranges = field_data_.response.fields[field_data_.response.monitoring_cases[msg->active_monitoring_case - 1].fields[dtz_]-1].ranges;
+    // The field_index query will return 0 if there is no defined field for that monitoring case.
+    int field_index;
+    if (field_data_.response.monitoring_cases[active_case_index].fields[dtz_] == 0){
+        return;
+    }
+    else{
+        field_index = field_data_.response.monitoring_cases[active_case_index].fields[dtz_] - 1;
+    }
+    if (field_index < 0 || field_index >= field_data_.response.fields.size()) {
+        throw std::out_of_range("Field index is out of bounds");
+    }
+
+    current_safety_field_.ranges = field_data_.response.fields[field_index].ranges;
 
     if (safety_field_pub_.getNumSubscribers() > 0) {
         safety_field_pub_.publish(current_safety_field_);
@@ -68,7 +80,7 @@ int main(int argc, char** argv) {
         sick::SafetyFieldVisualizer protective(robot_name, laser_name, false);
         sick::SafetyFieldVisualizer DTZ(robot_name, laser_name, true);
     } catch (const std::runtime_error& e) {
-        ROS_ERROR("Sick viz crashed for laser %s: %s", laser_name.c_str(), e.what());
+        ROS_FATAL("Sick viz crashed for laser %s: %s", laser_name.c_str(), e.what());
         return 1;
     }
 
