@@ -7,7 +7,7 @@ namespace sick
 SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz)
     : dtz_(dtz) {
     // Wait for the service to get the field data
-    if (!ros::service::waitForService("/" + robot + "/" + laser + "_nanoscan/field_data", ros::Duration(5))) {
+    if (!ros::service::waitForService("/" + robot + "/" + laser + "_nanoscan/field_data")) {
         ROS_ERROR("Service /%s/%s_nanoscan/field_data not available", robot.c_str(), laser.c_str());
         throw std::runtime_error("Nanoscan field_data service not available");
     }
@@ -40,9 +40,11 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg) {
     current_safety_field_.header.stamp = ros::Time::now();
 
+    // If the active_case_index is out of bounds (when the lidars fault) don't publishing anything
     int active_case_index = msg->active_monitoring_case - 1;
     if (active_case_index < 0 || active_case_index >= field_data_.response.monitoring_cases.size()) {
-        throw std::out_of_range("Active monitoring case index is out of bounds");
+        ROS_WARN_STREAM("Invalid active monitoring case: " << active_case_index);
+        active_case_index = 0;
     }
 
     // The field_index query will return 0 if there is no defined field for that monitoring case.
