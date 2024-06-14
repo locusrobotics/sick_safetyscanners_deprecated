@@ -43,7 +43,10 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
     // If the active_case_index is out of bounds (when the lidars fault) don't publishing anything
     int active_case_index = msg->active_monitoring_case - 1;
     if (active_case_index < 0 || active_case_index >= field_data_.response.monitoring_cases.size()) {
-        ROS_WARN_STREAM("Invalid active monitoring case: " << active_case_index);
+        // active_case_index == -1 will occur whenever the SSU faults, no need to log
+        if (active_case_index != -1){
+            ROS_WARN_STREAM("Invalid active monitoring case: " << active_case_index);
+        }
         active_case_index = 0;
     }
 
