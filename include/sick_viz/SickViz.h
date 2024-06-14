@@ -2,10 +2,11 @@
 #define SICK_SAFETYSCANNERS_SICKVIZ_H
 
 #include "ros/ros.h"
-#include "sensor_msgs/LaserScan.h"
+#include "geometry_msgs/PolygonStamped.h"
 #include "sick_safetyscanners/RawMicroScanDataMsg.h"
 #include "sick_safetyscanners/FieldData.h"
 #include "sick_safetyscanners/OutputPathsMsg.h"
+#include <vector>
 
 namespace sick {
 /**
@@ -18,13 +19,17 @@ public:
     void microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg);
 
 private:
+    void preprocessFieldData();
+
     ros::NodeHandle nh_;
     ros::ServiceClient field_data_client_;
     ros::Publisher safety_field_pub_;
     ros::Subscriber raw_data_sub_;
-    sensor_msgs::LaserScan current_safety_field_;
+    std::vector<geometry_msgs::PolygonStamped> preprocessed_fields_;
     bool dtz_;
     std::string zone_type_;
+    std::string robot_;
+    std::string laser_;
     sick_safetyscanners::FieldData field_data_;
 };
 
