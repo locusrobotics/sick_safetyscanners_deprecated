@@ -2,8 +2,8 @@
 Changelog for package sick_safetyscanners
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2024-06-17)
+------------------
 * Update sick_viz.cpp (#10)
 * Added additional safety checks to sick_viz (#9)
   * Added additional safety checks to sick_viz
