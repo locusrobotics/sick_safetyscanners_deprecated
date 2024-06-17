@@ -62,6 +62,7 @@ SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle &nodehandle)
   m_laser_scan_publisher = m_nh.advertise<sensor_msgs::LaserScan>("scan", 100);
   m_extended_laser_scan_publisher =
     m_nh.advertise<sick_safetyscanners::ExtendedLaserScanMsg>("extended_laser_scan", 100);
+  m_intrusion_laser_scan_publisher = m_nh.advertise<sensor_msgs::LaserScan>("intrusion_laser_scan", 100);
   m_raw_data_publisher = m_nh.advertise<sick_safetyscanners::RawMicroScanDataMsg>("raw_data", 100);
   m_output_path_publisher =
     m_nh.advertise<sick_safetyscanners::OutputPathsMsg>("output_paths", 100);
@@ -320,8 +321,12 @@ void SickSafetyscannersRos::receivedUDPPacket(const sick::datastructure::Data& d
     sick_safetyscanners::ExtendedLaserScanMsgPtr extended_scan =
       boost::make_shared<sick_safetyscanners::ExtendedLaserScanMsg>();
     extended_scan = createExtendedLaserScanMessage(data);
-
     m_extended_laser_scan_publisher.publish(extended_scan);
+
+    sensor_msgs::LaserScanPtr intrusion_scan =
+      boost::make_shared<sensor_msgs::LaserScan>();
+    intrusion_scan = createIntrusionLaserScanMessage(data);
+    m_intrusion_laser_scan_publisher.publish(intrusion_scan);
 
     sick_safetyscanners::OutputPathsMsgPtr output_paths =
       boost::make_shared<sick_safetyscanners::OutputPathsMsg>();
@@ -430,6 +435,24 @@ SickSafetyscannersRos::createExtendedLaserScanMessage(const sick::datastructure:
     msg->reflektor_status[i]                        = scan_point.getReflectorBit();
     msg->intrusion[i]                               = scan_point.getContaminationBit();
     msg->reflektor_median[i]                        = medians.at(i);
+  }
+  return msg;
+}
+
+sensor_msgs::LaserScanPtr
+SickSafetyscannersRos::createIntrusionLaserScanMessage(const sick::datastructure::Data& data)
+{
+  // auto msg = boost::make_shared<sensor_msgs::LaserScanMsg>();
+  auto msg = createLaserScanMessage(data);
+
+  std::vector<sick::datastructure::ScanPoint> scan_points =
+    data.getMeasurementDataPtr()->getScanPointsVector();
+
+  for (uint32_t i = 0; i < scan_points.size(); ++i){
+    const sick::datastructure::ScanPoint scan_point = scan_points.at(i);
+    if (!scan_point.getContaminationBit()){
+      msg->ranges[i] = 0.0;
+    }
   }
   return msg;
 }

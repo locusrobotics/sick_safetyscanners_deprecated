@@ -134,6 +134,7 @@ private:
   //! ROS topic publisher
   ros::Publisher m_laser_scan_publisher;
   ros::Publisher m_extended_laser_scan_publisher;
+  ros::Publisher m_intrusion_laser_scan_publisher;
   ros::Publisher m_raw_data_publisher;
   ros::Publisher m_output_path_publisher;
 
@@ -237,6 +238,8 @@ private:
   sensor_msgs::LaserScanPtr createLaserScanMessage(const sick::datastructure::Data& data);
   sick_safetyscanners::ExtendedLaserScanMsgPtr
   createExtendedLaserScanMessage(const sick::datastructure::Data& data);
+  sensor_msgs::LaserScanPtr
+  createIntrusionLaserScanMessage(const sick::datastructure::Data& data);
   std::vector<bool>
   getMedianReflectors(const std::vector<sick::datastructure::ScanPoint> scan_points);
   sick_safetyscanners::OutputPathsMsgPtr
