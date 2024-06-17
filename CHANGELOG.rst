@@ -2,6 +2,61 @@
 Changelog for package sick_safetyscanners
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update sick_viz.cpp (#10)
+* Added additional safety checks to sick_viz (#9)
+  * Added additional safety checks to sick_viz
+  * fatal -> error
+  * More safety checks
+  * Change behaviour when tryint to index out of bounds
+* [RST-9699] Nodeletize NanoScan (#8)
+  * add sick_safetyscanners nodelet and change msg data type
+  * update remaining sick msgs
+  * add sick_viz nodelet
+  * update
+  * fix memory access crash
+  * Update CMakeLists.txt
+  Co-authored-by: Shivam Thukral <shivam13095@iiitd.ac.in>
+  * Update nodelet_plugins.xml
+  Co-authored-by: Shivam Thukral <shivam13095@iiitd.ac.in>
+  ---------
+  Co-authored-by: Shivam Thukral <shivam13095@iiitd.ac.in>
+* Removed Command Variable (#7)
+* Rst 9975 sick viz bug (#6)
+  * Node Cleanup
+  * whitespace
+* Fixed bad checksum return (#5)
+* viz fix (#4)
+  Co-authored-by: josh <josho.wallace@gmail.com>
+* Rst 9818 sick fieldset visualizer (#3)
+  * checkpoint
+  * Update 2
+  * progress update
+  * Finished correct publication, transforms are still needed
+  * progress
+  * moved from hardcoded robot name
+  * V1 done
+  * removed launch changes
+  * Update sick_viz.cpp
+  naming typo
+  * Cleanup WIP
+  * lazy subscriber
+* Added function to get checksum value (#2)
+  * Added function to get checksum value
+  * Added timeout to CRC check
+* Added reconnect logic (#1)
+  * Added reconnect logic
+  * Handle connect error
+  * PR feedback
+* Fix formatting #2
+* Fix formatting
+* Add pending command mutex
+  Adding a mutex to restrict simultaneous access to pending commands
+* typo fixed when install this library from binaries
+* changed type to signed int for angle changes
+* Contributors: André Antunes, Carlos Mendes, Josh Friesen, Lennart Puck, Nico, Siyu Chen
+
 1.0.9 (2023-06-01)
 ------------------
 * added StatusOverview service
