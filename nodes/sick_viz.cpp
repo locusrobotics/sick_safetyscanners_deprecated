@@ -1,3 +1,4 @@
+#include <geometry_msgs/Point.h>
 #include "ros/ros.h"
 #include "sick_viz/SickViz.h"
 
@@ -25,7 +26,8 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
         return;
     }
 
-    safety_field_pub_ = nh_.advertise<geometry_msgs::PolygonStamped>("/" + robot_ + "/" + laser_ + "_nanoscan/safety_field/" + zone_type_, 10);
+    safety_field_pub_ = nh_.advertise<visualization_msgs::Marker>("/" + robot_ + "/" + laser_ + "_scan/safety_field/" + zone_type_, 10);
+    monitoring_case_pub_ = nh_.advertise<visualization_msgs::Marker>("/" + robot_ + "/" + laser_ + "_scan/monitoring_case_marker", 10);
 
     preprocessFieldData();
 
@@ -34,23 +36,51 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 }
 
 void SafetyFieldVisualizer::preprocessFieldData() {
-    preprocessed_fields_.clear();
+    preprocessed_markers_.clear();
 
     for (const auto& field : field_data_.response.fields) {
-        geometry_msgs::PolygonStamped polygon;
-        polygon.header.frame_id = robot_ + "/" + laser_ + "_laser_link";
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = robot_ + "/" + laser_ + "_laser_link";
+        marker.type = visualization_msgs::Marker::LINE_STRIP;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.color.a = 1.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.01;
+        marker.scale.y = 0.01;
+        marker.scale.z = 0.01;
+
+        if (dtz_){
+            marker.color.r = 1.0;
+            marker.color.g = 1.0;
+            marker.color.b = 0.0;
+        }
+        else{
+            marker.color.r = 0.0;
+            marker.color.g = 1.0;
+            marker.color.b = 0.0;
+        }
 
         for (size_t i = 0; i < field.ranges.size(); ++i) {
-            geometry_msgs::Point32 point;
+            geometry_msgs::Point point;
             double angle = field.start_angle + i * field.angular_resolution;
             point.x = field.ranges[i] * cos(angle);
             point.y = field.ranges[i] * sin(angle);
             point.z = 0.0;
-            polygon.polygon.points.push_back(point);
+            marker.points.push_back(point);
         }
 
-        preprocessed_fields_.push_back(polygon);
+        preprocessed_markers_.push_back(marker);
     }
+
+    // Initialize monitoring_case_marker_
+    monitoring_case_marker_.header.frame_id = robot_ + "/" + laser_ + "_laser_link";
+    monitoring_case_marker_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    monitoring_case_marker_.action = visualization_msgs::Marker::ADD;
+    monitoring_case_marker_.color.a = 1.0;
+    monitoring_case_marker_.pose.orientation.w = 1.0;
+    monitoring_case_marker_.scale.x = 0.25;
+    monitoring_case_marker_.scale.y = 0.25;
+    monitoring_case_marker_.scale.z = 0.25;
 }
 
 void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg) {
@@ -72,15 +102,36 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
     else{
         field_index = field_data_.response.monitoring_cases[active_case_index].fields[dtz_] - 1;
     }
-    if (field_index < 0 || field_index >= static_cast<int>(preprocessed_fields_.size())) {
+    if (field_index < 0 || field_index >= static_cast<int>(preprocessed_markers_.size())) {
         throw std::out_of_range("Field index is out of bounds");
     }
 
-    geometry_msgs::PolygonStamped current_safety_field = preprocessed_fields_[field_index];
+    visualization_msgs::Marker current_safety_field = preprocessed_markers_[field_index];
+
+    if (!msg->status[dtz_]) {
+        current_safety_field.color.r = 1.0;
+        current_safety_field.color.g = 0.0;
+        current_safety_field.color.b = 0.0;
+        monitoring_case_marker_.color.r = 1.0;
+        monitoring_case_marker_.color.g = 0.0;
+        monitoring_case_marker_.color.b = 0.0;
+    }
+    else{
+        monitoring_case_marker_.color.r = 0.0;
+        monitoring_case_marker_.color.g = 1.0;
+        monitoring_case_marker_.color.b = 0.0;
+    }
+    monitoring_case_marker_.text = std::to_string(msg->active_monitoring_case);
+
     current_safety_field.header.stamp = ros::Time::now();
+    monitoring_case_marker_.header.stamp = ros::Time::now();
 
     if (safety_field_pub_.getNumSubscribers() > 0) {
         safety_field_pub_.publish(current_safety_field);
+    }
+
+    if (monitoring_case_pub_.getNumSubscribers() > 0) {
+        monitoring_case_pub_.publish(monitoring_case_marker_);
     }
 }
 
