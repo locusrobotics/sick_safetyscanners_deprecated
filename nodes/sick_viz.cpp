@@ -1,6 +1,7 @@
 #include <geometry_msgs/Point.h>
 #include "ros/ros.h"
 #include "sick_viz/SickViz.h"
+#include "sick_viz/DouglasPeucker.h"
 
 namespace sick 
 {
@@ -33,6 +34,25 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 
     // Subscribe to the active monitoring case topic
     raw_data_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
+}
+
+void simplifyMarkerPoints(visualization_msgs::Marker& marker, float epsilon) {
+    std::vector<dougpeuck::Point> inputPoints, simplifiedPoints;
+
+    for (const auto& pt : marker.points) {
+        inputPoints.emplace_back(pt.x, pt.y);
+    }
+
+    simplifiedPoints = dougpeuck::simplifyPolyline(inputPoints, epsilon);
+
+    marker.points.clear();
+    for (const auto& pt : simplifiedPoints) {
+        geometry_msgs::Point rosPoint;
+        rosPoint.x = pt.x;
+        rosPoint.y = pt.y;
+        rosPoint.z = 0.0;
+        marker.points.push_back(rosPoint);
+    }
 }
 
 void SafetyFieldVisualizer::preprocessFieldData() {
@@ -68,6 +88,10 @@ void SafetyFieldVisualizer::preprocessFieldData() {
             point.z = 0.0;
             marker.points.push_back(point);
         }
+
+        float epsilon = 0.1;
+        simplifyMarkerPoints(marker, epsilon);
+
 
         preprocessed_markers_.push_back(marker);
     }
