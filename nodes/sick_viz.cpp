@@ -7,7 +7,7 @@ namespace sick
 {
 
 SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz)
-    : dtz_(dtz), robot_(robot), laser_(laser) {
+    : robot_(robot), laser_(laser), dtz_(dtz), epsilon_(0.8) {
     // Wait for the service to get the field data
     if (!ros::service::waitForService("/" + robot_ + "/" + laser_ + "_nanoscan/field_data")) {
         ROS_ERROR("Service /%s/%s_nanoscan/field_data not available", robot.c_str(), laser.c_str());
@@ -34,6 +34,11 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 
     // Subscribe to the active monitoring case topic
     raw_data_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
+
+    // Dynamic reconfigure server setup
+    dynamic_reconfigure::Server<sick_safetyscanners::SickVizConfig>::CallbackType cb;
+    cb = boost::bind(&SafetyFieldVisualizer::dynamicReconfigCallback, this, _1, _2);
+    dr_srv_.setCallback(cb);
 }
 
 void simplifyMarkerPoints(visualization_msgs::Marker& marker, float epsilon) {
@@ -57,6 +62,7 @@ void simplifyMarkerPoints(visualization_msgs::Marker& marker, float epsilon) {
 
 void SafetyFieldVisualizer::preprocessFieldData() {
     preprocessed_markers_.clear();
+    int marker_count = 0;
 
     for (const auto& field : field_data_.response.fields) {
         visualization_msgs::Marker marker;
@@ -89,12 +95,13 @@ void SafetyFieldVisualizer::preprocessFieldData() {
             marker.points.push_back(point);
         }
 
-        float epsilon = 0.1;
-        simplifyMarkerPoints(marker, epsilon);
-
-
+        simplifyMarkerPoints(marker, epsilon_);
         preprocessed_markers_.push_back(marker);
+        marker_count += marker.points.size();
     }
+    float average_size = marker_count / field_data_.response.fields.size();
+    ROS_INFO("Douglas Peucker Downsampling - %s %s average field marker count: %f epsilon: %f",
+              laser_.c_str(), zone_type_.c_str(), average_size, epsilon_);
 
     // Initialize monitoring_case_marker_
     monitoring_case_marker_.header.frame_id = robot_ + "/" + laser_ + "_laser_link";
@@ -157,6 +164,11 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
     if (monitoring_case_pub_.getNumSubscribers() > 0) {
         monitoring_case_pub_.publish(monitoring_case_marker_);
     }
+}
+
+void SafetyFieldVisualizer::dynamicReconfigCallback(sick_safetyscanners::SickVizConfig &config, uint32_t level) {
+    epsilon_ = config.epsilon;
+    preprocessFieldData();  // Re-process the field data with the new epsilon value
 }
 
 }  // namespace sick

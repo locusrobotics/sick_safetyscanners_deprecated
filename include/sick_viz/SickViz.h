@@ -6,6 +6,8 @@
 #include "sick_safetyscanners/RawMicroScanDataMsg.h"
 #include "sick_safetyscanners/FieldData.h"
 #include "sick_safetyscanners/OutputPathsMsg.h"
+#include <dynamic_reconfigure/server.h>
+#include <sick_safetyscanners/SickVizConfig.h>
 #include <vector>
 
 namespace sick {
@@ -21,19 +23,23 @@ public:
 private:
     void preprocessFieldData();
     void downsampleMarkerPoints(visualization_msgs::Marker& marker, float epsilon);
+    void dynamicReconfigCallback(sick_safetyscanners::SickVizConfig &config, uint32_t level);
 
     ros::NodeHandle nh_;
     ros::ServiceClient field_data_client_;
     ros::Publisher safety_field_pub_;
     ros::Publisher monitoring_case_pub_;
     ros::Subscriber raw_data_sub_;
+    sick_safetyscanners::FieldData field_data_;
     std::vector<visualization_msgs::Marker> preprocessed_markers_;
     visualization_msgs::Marker monitoring_case_marker_;
-    bool dtz_;
-    std::string zone_type_;
-    std::string robot_;
     std::string laser_;
-    sick_safetyscanners::FieldData field_data_;
+    std::string robot_;
+    std::string zone_type_;
+    bool dtz_;
+    float epsilon_;
+
+    dynamic_reconfigure::Server<sick_safetyscanners::SickVizConfig> dr_srv_;
 };
 
 }  // namespace sick
