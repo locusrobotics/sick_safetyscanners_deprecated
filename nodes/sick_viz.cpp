@@ -1,7 +1,7 @@
 #include <geometry_msgs/Point.h>
 #include "ros/ros.h"
 #include "sick_viz/SickViz.h"
-#include "sick_viz/DouglasPeucker.h"
+#include "sick_viz/VisWhyatt.h"
 
 namespace sick 
 {
@@ -42,13 +42,14 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 }
 
 void simplifyMarkerPoints(visualization_msgs::Marker& marker, float epsilon) {
-    std::vector<dougpeuck::Point> inputPoints, simplifiedPoints;
+    std::vector<viswhyatt::Point> inputPoints, simplifiedPoints;
 
     for (const auto& pt : marker.points) {
         inputPoints.emplace_back(pt.x, pt.y);
     }
 
-    simplifiedPoints = dougpeuck::simplifyPolyline(inputPoints, epsilon);
+    std::size_t targetSize = 500;
+    simplifiedPoints = viswhyatt::simplifyPolyline(inputPoints, targetSize);
 
     marker.points.clear();
     for (const auto& pt : simplifiedPoints) {
@@ -95,12 +96,12 @@ void SafetyFieldVisualizer::preprocessFieldData() {
             marker.points.push_back(point);
         }
 
-        simplifyMarkerPoints(marker, epsilon_);
+        simplifyMarkerPoints(marker, 1000);
         preprocessed_markers_.push_back(marker);
         marker_count += marker.points.size();
     }
     float average_size = marker_count / field_data_.response.fields.size();
-    ROS_INFO("Douglas Peucker Downsampling - %s %s average field marker count: %f epsilon: %f",
+    ROS_INFO("Visvilingham Whyatt - %s %s average field marker count: %f epsilon: %f",
               laser_.c_str(), zone_type_.c_str(), average_size, epsilon_);
 
     // Initialize monitoring_case_marker_

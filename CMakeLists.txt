@@ -202,7 +202,7 @@ add_library(${PROJECT_NAME}_core
 
 ## Declare a cpp library
 add_library(viz_core
-  src/DouglasPeucker.cpp
+  src/VisWhyatt.cpp
 )
 
 ## Declare cpp executables
