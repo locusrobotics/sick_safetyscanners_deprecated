@@ -35,7 +35,7 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
     raw_data_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
 
     // Dynamic reconfigure server setup
-    dynamic_reconfigure::Server<sick_safetyscanners::SickVizConfig>::CallbackType cb;
+    dynamic_reconfigure::Server<sick_safetyscanners::SickVizConfigurationConfig>::CallbackType cb;
     cb = boost::bind(&SafetyFieldVisualizer::dynamicReconfigCallback, this, _1, _2);
     dr_srv_.setCallback(cb);
 }
@@ -160,7 +160,7 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
     }
 }
 
-void SafetyFieldVisualizer::dynamicReconfigCallback(sick_safetyscanners::SickVizConfig &config, uint32_t level) {
+void SafetyFieldVisualizer::dynamicReconfigCallback(sick_safetyscanners::SickVizConfigurationConfig &config, uint32_t level) {
     polygonSize_ = config.polygon_size;
     ROS_WARN_STREAM("AAAAAAAAAAAAAAAAAA: " << polygonSize_);
     preprocessFieldData();  // Re-process the field data with the new polygon_size parameter
