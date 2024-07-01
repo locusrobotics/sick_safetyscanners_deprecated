@@ -7,7 +7,7 @@ namespace sick
 {
 
 SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz)
-    : robot_(robot), laser_(laser), dtz_(dtz), epsilon_(0.8) {
+    : robot_(robot), laser_(laser), dtz_(dtz), polygonSize_(100) {
     // Wait for the service to get the field data
     if (!ros::service::waitForService("/" + robot_ + "/" + laser_ + "_nanoscan/field_data")) {
         ROS_ERROR("Service /%s/%s_nanoscan/field_data not available", robot.c_str(), laser.c_str());
@@ -32,7 +32,6 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 
     preprocessFieldData();
 
-    // Subscribe to the active monitoring case topic
     raw_data_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
 
     // Dynamic reconfigure server setup
@@ -41,15 +40,14 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
     dr_srv_.setCallback(cb);
 }
 
-void simplifyMarkerPoints(visualization_msgs::Marker& marker, float epsilon) {
+void simplifyMarkerPoints(visualization_msgs::Marker& marker, std::size_t polygonSize) {
     std::vector<viswhyatt::Point> inputPoints, simplifiedPoints;
 
     for (const auto& pt : marker.points) {
         inputPoints.emplace_back(pt.x, pt.y);
     }
 
-    std::size_t targetSize = 500;
-    simplifiedPoints = viswhyatt::simplifyPolyline(inputPoints, targetSize);
+    simplifiedPoints = viswhyatt::simplifyPolyline(inputPoints, polygonSize);
 
     marker.points.clear();
     for (const auto& pt : simplifiedPoints) {
@@ -63,7 +61,6 @@ void simplifyMarkerPoints(visualization_msgs::Marker& marker, float epsilon) {
 
 void SafetyFieldVisualizer::preprocessFieldData() {
     preprocessed_markers_.clear();
-    int marker_count = 0;
 
     for (const auto& field : field_data_.response.fields) {
         visualization_msgs::Marker marker;
@@ -96,13 +93,9 @@ void SafetyFieldVisualizer::preprocessFieldData() {
             marker.points.push_back(point);
         }
 
-        simplifyMarkerPoints(marker, 1000);
+        simplifyMarkerPoints(marker, std::size_t(polygonSize_));
         preprocessed_markers_.push_back(marker);
-        marker_count += marker.points.size();
     }
-    float average_size = marker_count / field_data_.response.fields.size();
-    ROS_INFO("Visvilingham Whyatt - %s %s average field marker count: %f epsilon: %f",
-              laser_.c_str(), zone_type_.c_str(), average_size, epsilon_);
 
     // Initialize monitoring_case_marker_
     monitoring_case_marker_.header.frame_id = robot_ + "/" + laser_ + "_laser_link";
@@ -168,8 +161,9 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
 }
 
 void SafetyFieldVisualizer::dynamicReconfigCallback(sick_safetyscanners::SickVizConfig &config, uint32_t level) {
-    epsilon_ = config.epsilon;
-    preprocessFieldData();  // Re-process the field data with the new epsilon value
+    polygonSize_ = config.polygon_size;
+    ROS_WARN_STREAM("AAAAAAAAAAAAAAAAAA: " << polygonSize_);
+    preprocessFieldData();  // Re-process the field data with the new polygon_size parameter
 }
 
 }  // namespace sick

@@ -44,13 +44,12 @@ void visWhyatt(const std::vector<Point>& points, std::size_t targetSize, std::ve
         }
     }
 
-    // Assign the simplified points to the output vector
     outPoints = simplifiedPoints;
 }
 
 std::vector<Point> simplifyPolyline(const std::vector<Point>& points, std::size_t targetSize) {
     std::vector<Point> result;
-    if (points.size() < 2) {
+    if (points.size() < 2 || targetSize < 2 || targetSize > points.size()) {
         return points;
     }
     visWhyatt(points, targetSize, result);

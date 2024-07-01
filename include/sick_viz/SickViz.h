@@ -33,11 +33,11 @@ private:
     sick_safetyscanners::FieldData field_data_;
     std::vector<visualization_msgs::Marker> preprocessed_markers_;
     visualization_msgs::Marker monitoring_case_marker_;
-    std::string laser_;
     std::string robot_;
+    std::string laser_;
     std::string zone_type_;
     bool dtz_;
-    float epsilon_;
+    int polygonSize_;
 
     dynamic_reconfigure::Server<sick_safetyscanners::SickVizConfig> dr_srv_;
 };
