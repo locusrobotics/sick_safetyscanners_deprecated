@@ -137,6 +137,11 @@ private:
   ros::Publisher m_raw_data_publisher;
   ros::Publisher m_output_path_publisher;
 
+
+  dynamic_reconfigure::Server<sick_safetyscanners::SickSafetyscannersConfigurationConfig>
+    m_dynamic_reconfiguration_server;
+
+
   // Diagnostics
   diagnostic_updater::Updater m_diagnostic_updater;
   std::shared_ptr<DiagnosedLaserScanPublisher> m_diagnosed_laser_scan_publisher;
@@ -180,9 +185,6 @@ private:
 
   sick::datastructure::CommSettings m_communication_settings;
   boost::asio::ip::address_v4 m_interface_ip;
-
-  dynamic_reconfigure::Server<sick_safetyscanners::SickSafetyscannersConfigurationConfig>
-    m_dynamic_reconfiguration_server;
 
   std::string m_frame_id;
   double m_time_offset;
