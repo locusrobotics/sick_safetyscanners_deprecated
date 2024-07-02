@@ -41,6 +41,7 @@ namespace sick {
 SickSafetyscannersRos::SickSafetyscannersRos(const ros::NodeHandle &nodehandle)
   : m_nh(nodehandle)
   , m_private_nh(nodehandle)
+  , m_dynamic_reconfiguration_server(nodehandle)
   , m_initialised(false)
   , m_time_offset(0.0)
   , m_range_min(0.0)
