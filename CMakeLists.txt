@@ -26,7 +26,6 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 
 generate_dynamic_reconfigure_options(
   config/SickSafetyscannersConfiguration.cfg
-  config/SickVizConfiguration.cfg
 )
 
 

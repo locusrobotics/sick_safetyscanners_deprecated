@@ -7,7 +7,7 @@
 #include "sick_safetyscanners/FieldData.h"
 #include "sick_safetyscanners/OutputPathsMsg.h"
 #include <dynamic_reconfigure/server.h>
-#include <sick_safetyscanners/SickVizConfigurationConfig.h>
+#include <sick_safetyscanners/SickSafetyscannersConfigurationConfig.h>
 #include <vector>
 
 namespace sick {
@@ -23,7 +23,7 @@ public:
 private:
     void preprocessFieldData();
     void downsampleMarkerPoints(visualization_msgs::Marker& marker, float epsilon);
-    void dynamicReconfigCallback(sick_safetyscanners::SickVizConfigurationConfig &config, uint32_t level);
+    void dynamicReconfigCallback(sick_safetyscanners::SickSafetyscannersConfigurationConfig &config, uint32_t level);
 
     ros::NodeHandle nh_;
     ros::ServiceClient field_data_client_;
@@ -39,7 +39,7 @@ private:
     bool dtz_;
     int polygonSize_;
 
-    dynamic_reconfigure::Server<sick_safetyscanners::SickVizConfigurationConfig> dr_srv_;
+    dynamic_reconfigure::Server<sick_safetyscanners::SickSafetyscannersConfigurationConfig> dr_srv_;
 };
 
 }  // namespace sick
