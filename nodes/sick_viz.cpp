@@ -165,7 +165,6 @@ void SafetyFieldVisualizer::dynamicReconfigCallback(const dynamic_reconfigure::C
             preprocessFieldData();  // Re-process the field data with the new polygon_size parameter
         }
     }
-
 }
 
 }  // namespace sick

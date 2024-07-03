@@ -8,13 +8,12 @@ namespace viswhyatt {
 * @brief Implementation of the Visvalingam Whyatt algorithm
 */
 
-// Point structure to represent a point in 2D space
 struct Point {
     double x, y;
     Point(double x, double y) : x(x), y(y) {}
 };
 
-// Given 3 points, calculates area of triangle formed by the points
+// Calculate the area of the triangle formed by the three points
 double triangleArea(const Point& point1, const Point& point2, const Point& point3);
 
 // Visvalingam-Whyatt function to simplify the polyline
