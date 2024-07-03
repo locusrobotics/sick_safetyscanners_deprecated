@@ -34,10 +34,8 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 
     raw_data_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
 
-    // Dynamic reconfigure server setup
-    dynamic_reconfigure::Server<sick_safetyscanners::SickSafetyscannersConfigurationConfig>::CallbackType cb;
-    cb = boost::bind(&SafetyFieldVisualizer::dynamicReconfigCallback, this, _1, _2);
-    dr_srv_.setCallback(cb);
+    dyn_reconf_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/parameter_updates", 1, &SafetyFieldVisualizer::microscanCallback, this);
+
 }
 
 void simplifyMarkerPoints(visualization_msgs::Marker& marker, std::size_t polygonSize) {
@@ -159,10 +157,13 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
         monitoring_case_pub_.publish(monitoring_case_marker_);
     }
 }
+// void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg) {
+// void SafetyFieldVisualizer::dynamicReconfigCallback(sick_safetyscanners::SickSafetyscannersConfigurationConfig &config, uint32_t level) {
 
-void SafetyFieldVisualizer::dynamicReconfigCallback(sick_safetyscanners::SickSafetyscannersConfigurationConfig &config, uint32_t level) {
-    polygonSize_ = config.polygon_size;
-    preprocessFieldData();  // Re-process the field data with the new polygon_size parameter
+void SafetyFieldVisualizer::dynamicReconfigCallback(const dynamic_reconfigure::Config::ConstPtr& msg) {
+    ROS_WARN_STREAM("BBBBBBB");
+    // polygonSize_ = config.polygon_size;
+    // preprocessFieldData();  // Re-process the field data with the new polygon_size parameter
 }
 
 }  // namespace sick

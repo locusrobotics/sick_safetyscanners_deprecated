@@ -19,17 +19,18 @@ public:
     SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz = false);
 
     void microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg);
+    void dynamicReconfigCallback(const dynamic_reconfigure::Config::ConstPtr& msg);
 
 private:
     void preprocessFieldData();
     void downsampleMarkerPoints(visualization_msgs::Marker& marker, float epsilon);
-    void dynamicReconfigCallback(sick_safetyscanners::SickSafetyscannersConfigurationConfig &config, uint32_t level);
 
     ros::NodeHandle nh_;
     ros::ServiceClient field_data_client_;
     ros::Publisher safety_field_pub_;
     ros::Publisher monitoring_case_pub_;
     ros::Subscriber raw_data_sub_;
+    ros::Subscriber dyn_reconf_sub_;
     sick_safetyscanners::FieldData field_data_;
     std::vector<visualization_msgs::Marker> preprocessed_markers_;
     visualization_msgs::Marker monitoring_case_marker_;
