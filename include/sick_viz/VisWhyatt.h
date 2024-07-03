@@ -14,9 +14,10 @@ struct Point {
     Point(double x, double y) : x(x), y(y) {}
 };
 
+// Given 3 points, calculates area of triangle formed by the points
 double triangleArea(const Point& point1, const Point& point2, const Point& point3);
 
-// Douglas Peucker recursive function to simplify the polyline
+// Visvalingam-Whyatt function to simplify the polyline
 void visWhyatt(const std::vector<Point>& points, double epsilon, std::vector<Point>& outPoints);
 
 // Wrapper function to simplify a polyline

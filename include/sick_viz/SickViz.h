@@ -38,9 +38,8 @@ private:
     std::string laser_;
     std::string zone_type_;
     bool dtz_;
-    int polygonSize_;
-
-    dynamic_reconfigure::Server<sick_safetyscanners::SickSafetyscannersConfigurationConfig> dr_srv_;
+    int polygon_size_;
+    
 };
 
 }  // namespace sick

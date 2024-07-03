@@ -14,11 +14,11 @@ double triangleArea(const Point& point1, const Point& point2, const Point& point
 }
 
 void visWhyatt(const std::vector<Point>& points, std::size_t targetSize, std::vector<Point>& outPoints) {
-    if (points.size() <= targetSize || targetSize < 2) {
+    if (points.size() < 2 || targetSize < 2 || targetSize > points.size()) {
         throw std::invalid_argument("Invalid target size for simplification.");
     }
 
-    std::vector<Point> simplifiedPoints = points;
+    std::vector<Point> simplifiedPoints {points};
     std::vector<double> areas(simplifiedPoints.size(), std::numeric_limits<double>::max());
 
     // Calculate initial triangle areas
