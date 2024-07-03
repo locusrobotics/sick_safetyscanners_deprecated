@@ -23,7 +23,6 @@ public:
 
 private:
     void preprocessFieldData();
-    void simplifyMarkerPoints(visualization_msgs::Marker& marker, std::size_t polygon_size)
 
     ros::NodeHandle nh_;
     ros::ServiceClient field_data_client_;
