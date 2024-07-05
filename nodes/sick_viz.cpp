@@ -1,7 +1,7 @@
-#include <geometry_msgs/Point.h>
-#include "ros/ros.h"
 #include "sick_viz/SickViz.h"
 #include "sick_viz/VisWhyatt.h"
+#include "ros/ros.h"
+#include <geometry_msgs/Point.h>
 
 namespace sick 
 {
@@ -37,8 +37,8 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 
 }
 
-void simplifyMarkerPoints(visualization_msgs::Marker& marker, std::size_t polygon_size) {
-    std::vector<viswhyatt::Point> inputPoints, simplifiedPoints;
+void SafetyFieldVisualizer::simplifyMarkerPoints(visualization_msgs::Marker &marker, std::size_t polygon_size) {
+        std::vector<viswhyatt::Point> inputPoints, simplifiedPoints;
 
     for (const auto& pt : marker.points) {
         inputPoints.emplace_back(pt.x, pt.y);

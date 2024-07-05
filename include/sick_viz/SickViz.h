@@ -1,13 +1,13 @@
 #ifndef SICK_SAFETYSCANNERS_SICKVIZ_H
 #define SICK_SAFETYSCANNERS_SICKVIZ_H
 
-#include "ros/ros.h"
-#include "visualization_msgs/Marker.h"
+#include <sick_safetyscanners/SickSafetyscannersConfigurationConfig.h>
 #include "sick_safetyscanners/RawMicroScanDataMsg.h"
 #include "sick_safetyscanners/FieldData.h"
 #include "sick_safetyscanners/OutputPathsMsg.h"
+#include "visualization_msgs/Marker.h"
+#include "ros/ros.h"
 #include <dynamic_reconfigure/server.h>
-#include <sick_safetyscanners/SickSafetyscannersConfigurationConfig.h>
 #include <vector>
 
 namespace sick {
@@ -20,6 +20,7 @@ public:
 
     void microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg);
     void dynamicReconfigCallback(const dynamic_reconfigure::Config::ConstPtr& msg);
+    void simplifyMarkerPoints(visualization_msgs::Marker& marker, std::size_t polygon_size);
 
 private:
     void preprocessFieldData();
@@ -44,3 +45,4 @@ private:
 }  // namespace sick
 
 #endif  // SICK_SAFETYSCANNERS_SICKVIZ_H
+// simplify marker points
