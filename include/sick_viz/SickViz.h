@@ -1,11 +1,13 @@
 #ifndef SICK_SAFETYSCANNERS_SICKVIZ_H
 #define SICK_SAFETYSCANNERS_SICKVIZ_H
 
-#include "ros/ros.h"
-#include "visualization_msgs/Marker.h"
+#include <sick_safetyscanners/SickSafetyscannersConfigurationConfig.h>
 #include "sick_safetyscanners/RawMicroScanDataMsg.h"
 #include "sick_safetyscanners/FieldData.h"
 #include "sick_safetyscanners/OutputPathsMsg.h"
+#include "visualization_msgs/Marker.h"
+#include "ros/ros.h"
+#include <dynamic_reconfigure/server.h>
 #include <vector>
 
 namespace sick {
@@ -17,6 +19,8 @@ public:
     SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz = false);
 
     void microscanCallback(const sick_safetyscanners::OutputPathsMsg::ConstPtr& msg);
+    void dynamicReconfigCallback(const dynamic_reconfigure::Config::ConstPtr& msg);
+    void simplifyMarkerPoints(visualization_msgs::Marker& marker, std::size_t polygon_size);
 
 private:
     void preprocessFieldData();
@@ -26,15 +30,19 @@ private:
     ros::Publisher safety_field_pub_;
     ros::Publisher monitoring_case_pub_;
     ros::Subscriber raw_data_sub_;
+    ros::Subscriber dyn_reconf_sub_;
+    sick_safetyscanners::FieldData field_data_;
     std::vector<visualization_msgs::Marker> preprocessed_markers_;
     visualization_msgs::Marker monitoring_case_marker_;
-    bool dtz_;
-    std::string zone_type_;
     std::string robot_;
     std::string laser_;
-    sick_safetyscanners::FieldData field_data_;
+    std::string zone_type_;
+    bool dtz_;
+    int polygon_size_;
+    
 };
 
 }  // namespace sick
 
 #endif  // SICK_SAFETYSCANNERS_SICKVIZ_H
+// simplify marker points

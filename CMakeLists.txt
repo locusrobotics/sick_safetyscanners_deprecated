@@ -76,6 +76,7 @@ catkin_package(
 #    ${EIGEN3_INCLUDE_DIR}
   LIBRARIES
     ${PROJECT_NAME}_core
+    viz_core
   CATKIN_DEPENDS
     dynamic_reconfigure
     message_runtime
@@ -198,6 +199,11 @@ add_library(${PROJECT_NAME}_core
   src/datastructure/UserName.cpp
 )
 
+## Declare a cpp library
+add_library(viz_core
+  src/VisWhyatt.cpp
+)
+
 ## Declare cpp executables
 add_executable(${PROJECT_NAME}_node
   nodes/${PROJECT_NAME}_node.cpp
@@ -225,6 +231,10 @@ add_dependencies(${PROJECT_NAME}_core
   ${catkin_EXPORTED_TARGETS}
 )
 
+add_dependencies(viz_core
+  ${catkin_EXPORTED_TARGETS}
+)
+
 add_dependencies(${PROJECT_NAME}_node
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
@@ -249,12 +259,17 @@ target_link_libraries(${PROJECT_NAME}_core
   ${catkin_LIBRARIES}
 )
 
+target_link_libraries(viz_core
+  ${catkin_LIBRARIES}
+)
+
 target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}_core
   ${catkin_LIBRARIES}
 )
 
 target_link_libraries(sick_viz
+  viz_core
   ${catkin_LIBRARIES}
 )
 
@@ -273,6 +288,7 @@ target_include_directories(sick_viz_nodelet
     ${catkin_INCLUDE_DIRS}
 )
 target_link_libraries(sick_viz_nodelet
+  viz_core
   ${catkin_LIBRARIES}
 )
 
@@ -284,6 +300,13 @@ target_link_libraries(sick_viz_nodelet
 
 install(
   TARGETS ${PROJECT_NAME}_core
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  TARGETS viz_core
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
