@@ -1,12 +1,13 @@
-#include <geometry_msgs/Point.h>
-#include "ros/ros.h"
 #include "sick_viz/SickViz.h"
+#include "sick_viz/VisWhyatt.h"
+#include "ros/ros.h"
+#include <geometry_msgs/Point.h>
 
 namespace sick 
 {
 
 SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std::string& laser, bool dtz)
-    : dtz_(dtz), robot_(robot), laser_(laser) {
+    : robot_(robot), laser_(laser), dtz_(dtz), polygon_size_(50) {
     // Wait for the service to get the field data
     if (!ros::service::waitForService("/" + robot_ + "/" + laser_ + "_nanoscan/field_data")) {
         ROS_ERROR("Service /%s/%s_nanoscan/field_data not available", robot.c_str(), laser.c_str());
@@ -31,8 +32,28 @@ SafetyFieldVisualizer::SafetyFieldVisualizer(const std::string& robot, const std
 
     preprocessFieldData();
 
-    // Subscribe to the active monitoring case topic
     raw_data_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/output_paths", 1, &SafetyFieldVisualizer::microscanCallback, this);
+    dyn_reconf_sub_ = nh_.subscribe("/" + robot_ + "/" + laser_ + "_nanoscan/parameter_updates", 1, &SafetyFieldVisualizer::dynamicReconfigCallback, this);
+
+}
+
+void SafetyFieldVisualizer::simplifyMarkerPoints(visualization_msgs::Marker &marker, std::size_t polygon_size) {
+        std::vector<viswhyatt::Point> inputPoints, simplifiedPoints;
+
+    for (const auto& pt : marker.points) {
+        inputPoints.emplace_back(pt.x, pt.y);
+    }
+
+    simplifiedPoints = viswhyatt::simplifyPolyline(inputPoints, polygon_size);
+
+    marker.points.clear();
+    for (const auto& pt : simplifiedPoints) {
+        geometry_msgs::Point rosPoint;
+        rosPoint.x = pt.x;
+        rosPoint.y = pt.y;
+        rosPoint.z = 0.0;
+        marker.points.push_back(rosPoint);
+    }
 }
 
 void SafetyFieldVisualizer::preprocessFieldData() {
@@ -69,6 +90,7 @@ void SafetyFieldVisualizer::preprocessFieldData() {
             marker.points.push_back(point);
         }
 
+        simplifyMarkerPoints(marker, std::size_t(polygon_size_));
         preprocessed_markers_.push_back(marker);
     }
 
@@ -132,6 +154,16 @@ void SafetyFieldVisualizer::microscanCallback(const sick_safetyscanners::OutputP
 
     if (monitoring_case_pub_.getNumSubscribers() > 0) {
         monitoring_case_pub_.publish(monitoring_case_marker_);
+    }
+}
+
+void SafetyFieldVisualizer::dynamicReconfigCallback(const dynamic_reconfigure::Config::ConstPtr& msg) {
+    for (const auto& int_param : msg->ints) {
+        if (int_param.name == "polygon_size") {
+            polygon_size_ = int_param.value;
+            ROS_INFO("Updating %s laser polygon viz size to: %d", laser_.c_str(), polygon_size_);
+            preprocessFieldData();  // Re-process the field data with the new polygon_size parameter
+        }
     }
 }
 
